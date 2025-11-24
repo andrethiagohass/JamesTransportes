@@ -1,53 +1,87 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { supabase } from '../lib/supabase'
+import bcrypt from 'bcryptjs'
 
 interface AuthContextType {
   isAuthenticated: boolean
-  login: (username: string, password: string) => boolean
+  login: (username: string, password: string) => Promise<boolean>
   logout: () => void
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Credenciais (em produção, isso deveria estar no backend/Supabase)
-const VALID_USERS = [
-  { username: 'admin', password: 'james2025' },
-  { username: 'james', password: 'transportes123' },
-]
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   // Verificar se já está autenticado ao carregar
   useEffect(() => {
     const authToken = localStorage.getItem('james_auth_token')
-    if (authToken === 'authenticated') {
-      setIsAuthenticated(true)
+    const authExpiry = localStorage.getItem('james_auth_expiry')
+    
+    if (authToken && authExpiry) {
+      const expiryTime = parseInt(authExpiry)
+      if (Date.now() < expiryTime) {
+        setIsAuthenticated(true)
+      } else {
+        // Token expirado
+        localStorage.removeItem('james_auth_token')
+        localStorage.removeItem('james_auth_expiry')
+        localStorage.removeItem('james_username')
+      }
     }
+    setLoading(false)
   }, [])
 
-  const login = (username: string, password: string): boolean => {
-    const user = VALID_USERS.find(
-      u => u.username === username && u.password === password
-    )
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      // Buscar usuário no banco de dados
+      const { data: user, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('username', username)
+        .eq('ativo', true)
+        .single()
 
-    if (user) {
+      if (error || !user) {
+        console.error('Usuário não encontrado:', error)
+        return false
+      }
+
+      // Verificar senha usando bcrypt
+      const senhaValida = await bcrypt.compare(password, user.password_hash)
+
+      if (!senhaValida) {
+        console.error('Senha incorreta')
+        return false
+      }
+
+      // Autenticação bem-sucedida
       setIsAuthenticated(true)
+      
+      // Salvar token com expiração de 7 dias
+      const expiryTime = Date.now() + (7 * 24 * 60 * 60 * 1000)
       localStorage.setItem('james_auth_token', 'authenticated')
-      localStorage.setItem('james_username', username)
+      localStorage.setItem('james_auth_expiry', expiryTime.toString())
+      localStorage.setItem('james_username', user.nome || username)
+      
       return true
+    } catch (error) {
+      console.error('Erro ao fazer login:', error)
+      return false
     }
-
-    return false
   }
 
   const logout = () => {
     setIsAuthenticated(false)
     localStorage.removeItem('james_auth_token')
+    localStorage.removeItem('james_auth_expiry')
     localStorage.removeItem('james_username')
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

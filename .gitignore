@@ -27,3 +27,12 @@ dist-ssr
 .env
 .env.local
 .env.production
+
+# Arquivos com senhas e credenciais
+SUPABASE_AUTH_SETUP.md
+AUTENTICACAO.md
+*_SETUP.md
+gerar-hash.*
+*password*
+*senha*
+

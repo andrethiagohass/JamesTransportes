@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react'
 import { Lock, User } from 'lucide-react'
 
 interface LoginProps {
-  onLogin: (username: string, password: string) => boolean
+  onLogin: (username: string, password: string) => Promise<boolean>
 }
 
 const Login = ({ onLogin }: LoginProps) => {
@@ -16,17 +16,19 @@ const Login = ({ onLogin }: LoginProps) => {
     setError('')
     setLoading(true)
 
-    // Simular delay de autenticação
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    const success = onLogin(username, password)
-    
-    if (!success) {
-      setError('Usuário ou senha incorretos')
-      setPassword('')
+    try {
+      const success = await onLogin(username, password)
+      
+      if (!success) {
+        setError('Usuário ou senha incorretos')
+        setPassword('')
+      }
+    } catch (err) {
+      setError('Erro ao conectar. Tente novamente.')
+      console.error('Erro no login:', err)
+    } finally {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   return (

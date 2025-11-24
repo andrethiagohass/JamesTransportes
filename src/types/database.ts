@@ -128,6 +128,35 @@ export interface Database {
           updated_at?: string
         }
       }
+      usuarios: {
+        Row: {
+          id: string
+          username: string
+          password_hash: string
+          nome: string | null
+          ativo: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          username: string
+          password_hash: string
+          nome?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          username?: string
+          password_hash?: string
+          nome?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
