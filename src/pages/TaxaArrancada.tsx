@@ -188,20 +188,20 @@ const TaxaArrancada = () => {
         {taxas.length === 0 ? (
           <p className="text-gray-500">Nenhuma taxa cadastrada ainda.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-container">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                     Faixa (KM)
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                     Valor (R$)
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">
                     Ações
                   </th>
                 </tr>
@@ -209,16 +209,16 @@ const TaxaArrancada = () => {
               <tbody className="divide-y divide-gray-200">
                 {taxas.map((taxa) => (
                   <tr key={taxa.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium">
                       {taxa.km_inicial} - {taxa.km_final} km
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       R$ {taxa.valor.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <button
                         onClick={() => toggleAtivo(taxa)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
                           taxa.ativo
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
@@ -227,18 +227,18 @@ const TaxaArrancada = () => {
                         {taxa.ativo ? 'Ativo' : 'Inativo'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-sm text-right">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right">
                       <button
                         onClick={() => handleEdit(taxa)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-blue-600 hover:text-blue-800 mr-2 sm:mr-3"
                       >
-                        <Edit2 size={18} />
+                        <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                       <button
                         onClick={() => handleDelete(taxa.id)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                     </td>
                   </tr>

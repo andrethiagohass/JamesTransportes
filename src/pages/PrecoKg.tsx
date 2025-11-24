@@ -157,20 +157,20 @@ const PrecoKg = () => {
         {precos.length === 0 ? (
           <p className="text-gray-500">Nenhum preço cadastrado ainda.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-container">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                     Valor (R$/kg)
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">
                     Data Criação
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">
                     Ações
                   </th>
                 </tr>
@@ -178,13 +178,13 @@ const PrecoKg = () => {
               <tbody className="divide-y divide-gray-200">
                 {precos.map((preco) => (
                   <tr key={preco.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium">
                       R$ {preco.valor.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <button
                         onClick={() => toggleAtivo(preco)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
                           preco.ativo
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
@@ -193,21 +193,21 @@ const PrecoKg = () => {
                         {preco.ativo ? 'Ativo' : 'Inativo'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">
                       {new Date(preco.created_at).toLocaleDateString('pt-BR')}
                     </td>
-                    <td className="px-4 py-3 text-sm text-right">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right">
                       <button
                         onClick={() => handleEdit(preco)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-blue-600 hover:text-blue-800 mr-2 sm:mr-3"
                       >
-                        <Edit2 size={18} />
+                        <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                       <button
                         onClick={() => handleDelete(preco.id)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                     </td>
                   </tr>

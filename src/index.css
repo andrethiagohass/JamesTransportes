@@ -6,6 +6,15 @@
   body {
     @apply bg-gray-50 text-gray-900;
   }
+  
+  * {
+    @apply overflow-x-hidden;
+  }
+  
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
 }
 
 @layer components {
@@ -14,7 +23,7 @@
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    @apply bg-white rounded-lg shadow-md p-4 sm:p-6;
   }
   
   .btn {
@@ -31,6 +40,14 @@
   
   .btn-success {
     @apply bg-green-600 text-white hover:bg-green-700 active:bg-green-800;
+  }
+  
+  .table-container {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+  }
+  
+  .table-container table {
+    @apply min-w-full;
   }
   
   .input-field {

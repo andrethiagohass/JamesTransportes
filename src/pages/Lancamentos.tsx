@@ -310,47 +310,49 @@ const Lancamentos = () => {
         {lancamentos.length === 0 ? (
           <p className="text-gray-500">Nenhum lançamento cadastrado ainda.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-container">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Data</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">KM</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Peso</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Ações</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Data</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Peso</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Total</th>
+                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      {new Date(lanc.data).toLocaleDateString('pt-BR')}
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      <span className="hidden sm:inline">{new Date(lanc.data).toLocaleDateString('pt-BR')}</span>
+                      <span className="sm:hidden">{new Date(lanc.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <div>
                         <span className="font-medium">{lanc.km_total} km</span>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 hidden sm:block">
                           {lanc.km_inicial} → {lanc.km_final}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm">{lanc.peso} kg</td>
-                    <td className="px-4 py-3 text-sm font-bold text-green-600">
-                      R$ {lanc.preco_total.toFixed(2)}
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">{lanc.peso} kg</td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-600">
+                      <span className="hidden sm:inline">R$ {lanc.preco_total.toFixed(2)}</span>
+                      <span className="sm:hidden">R$ {lanc.preco_total.toFixed(0)}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-right">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right">
                       <button
                         onClick={() => handleEdit(lanc)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-blue-600 hover:text-blue-800 mr-2 sm:mr-3"
                       >
-                        <Edit2 size={18} />
+                        <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                       <button
                         onClick={() => handleDelete(lanc.id)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                     </td>
                   </tr>

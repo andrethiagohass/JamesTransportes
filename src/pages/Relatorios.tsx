@@ -362,26 +362,28 @@ const Relatorios = () => {
             {/* Detalhamento */}
             <div>
               <h3 className="font-semibold mb-4">Detalhamento de Lançamentos</h3>
-              <div className="overflow-x-auto">
+              <div className="table-container">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Data</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">KM Total</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Peso (kg)</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Valor (R$)</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Data</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">Peso</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Valor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {lancamentos.map((lanc) => (
                       <tr key={lanc.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm">
-                          {format(parseISO(lanc.data), 'dd/MM/yyyy', { locale: ptBR })}
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                          <span className="hidden sm:inline">{format(parseISO(lanc.data), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                          <span className="sm:hidden">{format(parseISO(lanc.data), 'dd/MM', { locale: ptBR })}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm">{lanc.km_total} km</td>
-                        <td className="px-4 py-3 text-sm">{lanc.peso} kg</td>
-                        <td className="px-4 py-3 text-sm font-medium text-green-600">
-                          R$ {lanc.preco_total.toFixed(2)}
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{lanc.km_total} km</td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{lanc.peso} kg</td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-green-600">
+                          <span className="hidden sm:inline">R$ {lanc.preco_total.toFixed(2)}</span>
+                          <span className="sm:hidden">R$ {lanc.preco_total.toFixed(0)}</span>
                         </td>
                       </tr>
                     ))}
