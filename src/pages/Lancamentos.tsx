@@ -76,7 +76,7 @@ const Lancamentos = () => {
         .eq('ativo', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       // Buscar preço por KG ativo
       const { data: precoKgData } = await supabase
@@ -85,7 +85,7 @@ const Lancamentos = () => {
         .eq('ativo', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       // Buscar taxa de arrancada baseada no KM total
       const { data: taxaData } = await supabase
@@ -95,7 +95,7 @@ const Lancamentos = () => {
         .lte('km_inicial', totalKm)
         .gte('km_final', totalKm)
         .limit(1)
-        .single()
+        .maybeSingle()
 
       const vKm = precoKmData?.valor || 0
       const vPeso = precoKgData?.valor || 0
@@ -141,7 +141,7 @@ const Lancamentos = () => {
       } else {
         const { error } = await supabase
           .from('lancamentos')
-          .insert(lancamentoData)
+          .insert([lancamentoData])
 
         if (error) throw error
       }
