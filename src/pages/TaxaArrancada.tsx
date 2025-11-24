@@ -1,0 +1,255 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { Save, Edit2, Trash2 } from 'lucide-react'
+
+interface TaxaType {
+  id: string
+  km_inicial: number
+  km_final: number
+  valor: number
+  ativo: boolean
+  created_at: string
+}
+
+const TaxaArrancada = () => {
+  const [taxas, setTaxas] = useState<TaxaType[]>([])
+  const [kmInicial, setKmInicial] = useState('')
+  const [kmFinal, setKmFinal] = useState('')
+  const [valor, setValor] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchTaxas()
+  }, [])
+
+  const fetchTaxas = async () => {
+    const { data, error } = await supabase
+      .from('taxa_arrancada')
+      .select('*')
+      .order('km_inicial', { ascending: true })
+
+    if (error) {
+      console.error('Erro ao carregar taxas:', error)
+    } else {
+      setTaxas(data || [])
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const taxaData = {
+        km_inicial: parseInt(kmInicial),
+        km_final: parseInt(kmFinal),
+        valor: parseFloat(valor),
+      }
+
+      if (editingId) {
+        const { error } = await supabase
+          .from('taxa_arrancada')
+          .update({ ...taxaData, updated_at: new Date().toISOString() })
+          .eq('id', editingId)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('taxa_arrancada')
+          .insert({ ...taxaData, ativo: true })
+
+        if (error) throw error
+      }
+
+      setKmInicial('')
+      setKmFinal('')
+      setValor('')
+      setEditingId(null)
+      fetchTaxas()
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      alert('Erro ao salvar taxa')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = (taxa: TaxaType) => {
+    setEditingId(taxa.id)
+    setKmInicial(taxa.km_inicial.toString())
+    setKmFinal(taxa.km_final.toString())
+    setValor(taxa.valor.toString())
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir?')) return
+
+    const { error } = await supabase
+      .from('taxa_arrancada')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Erro ao excluir:', error)
+      alert('Erro ao excluir')
+    } else {
+      fetchTaxas()
+    }
+  }
+
+  const toggleAtivo = async (taxa: TaxaType) => {
+    const { error } = await supabase
+      .from('taxa_arrancada')
+      .update({ ativo: !taxa.ativo })
+      .eq('id', taxa.id)
+
+    if (error) {
+      console.error('Erro ao atualizar:', error)
+    } else {
+      fetchTaxas()
+    }
+  }
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Taxa de Arrancada</h1>
+
+      <div className="card mb-8">
+        <h2 className="text-xl font-semibold mb-4">
+          {editingId ? 'Editar Taxa' : 'Nova Taxa'}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="label">KM Inicial</label>
+              <input
+                type="number"
+                value={kmInicial}
+                onChange={(e) => setKmInicial(e.target.value)}
+                className="input-field"
+                placeholder="0"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">KM Final</label>
+              <input
+                type="number"
+                value={kmFinal}
+                onChange={(e) => setKmFinal(e.target.value)}
+                className="input-field"
+                placeholder="200"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Valor (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className="input-field"
+                placeholder="157.00"
+                required
+              />
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary flex items-center gap-2"
+            >
+              <Save size={18} />
+              {loading ? 'Salvando...' : 'Salvar'}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null)
+                  setKmInicial('')
+                  setKmFinal('')
+                  setValor('')
+                }}
+                className="btn btn-secondary"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">Taxas Cadastradas</h2>
+        {taxas.length === 0 ? (
+          <p className="text-gray-500">Nenhuma taxa cadastrada ainda.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Faixa (KM)
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Valor (R$)
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {taxas.map((taxa) => (
+                  <tr key={taxa.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {taxa.km_inicial} - {taxa.km_final} km
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      R$ {taxa.valor.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        onClick={() => toggleAtivo(taxa)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          taxa.ativo
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {taxa.ativo ? 'Ativo' : 'Inativo'}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      <button
+                        onClick={() => handleEdit(taxa)}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(taxa.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default TaxaArrancada
