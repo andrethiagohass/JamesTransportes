@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
@@ -8,7 +9,17 @@ const __dirname = dirname(__filename)
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'public/404.html',
+          dest: '.'
+        }
+      ]
+    })
+  ],
   base: '/JamesTransportes/',
   resolve: {
     alias: {
