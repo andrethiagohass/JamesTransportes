@@ -114,19 +114,6 @@ const Login = ({ onLogin }: LoginProps) => {
             )}
           </button>
         </form>
-
-        {/* Informações de acesso (remover em produção) */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-xs text-blue-800 font-semibold mb-1">
-            🔐 Credenciais padrão:
-          </p>
-          <p className="text-xs text-blue-700">
-            Usuário: <span className="font-mono font-bold">admin</span>
-          </p>
-          <p className="text-xs text-blue-700">
-            Senha: <span className="font-mono font-bold">james2025</span>
-          </p>
-        </div>
       </div>
     </div>
   )
