@@ -20,12 +20,12 @@ Você precisa adicionar as variáveis de ambiente como **Secrets** no GitHub:
 
    **Secret 1:**
    - **Name**: `VITE_SUPABASE_URL`
-   - **Value**: `https://rxlnvvuxmfrixajkpdci.supabase.co`
+   - **Value**: Cole a URL do seu Supabase (do arquivo `.env` local)
    - Clique em **Add secret**
 
    **Secret 2:**
    - **Name**: `VITE_SUPABASE_ANON_KEY`
-   - **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4bG52dnV4bWZyaXhhamtwZGNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NTg5MzcsImV4cCI6MjA3OTUzNDkzN30.TeRVzRDVCIhEgjwbPfzoyEAAIG_mFE80BvjA3jIg`
+   - **Value**: Cole a chave ANON do seu Supabase (do arquivo `.env` local)
    - Clique em **Add secret**
 
 ---
