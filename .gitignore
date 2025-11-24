@@ -31,8 +31,10 @@ dist-ssr
 # Arquivos com senhas e credenciais
 SUPABASE_AUTH_SETUP.md
 AUTENTICACAO.md
+SENHA_PRIVADA.md
 *_SETUP.md
 gerar-hash.*
 *password*
 *senha*
+*PRIVADA*
 
