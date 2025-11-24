@@ -128,7 +128,7 @@ const Dashboard = () => {
       </div>
 
       <div className="mt-8 card">
-        <h3 className="text-xl font-semibold mb-4">Bem-vindo ao James Transportes!</h3>
+        <h3 className="text-xl font-semibold mb-4">Bem-vindo ao JCS Transportes e Logística!</h3>
         <p className="text-gray-600 mb-4">
           Sistema completo para gestão de transportes. Use o menu lateral para:
         </p>

@@ -101,7 +101,7 @@ const Relatorios = () => {
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
-    doc.text('JAMES TRANSPORTES', pageWidth / 2, 15, { align: 'center' })
+    doc.text('JCS TRANSPORTES E LOGISTICA', pageWidth / 2, 15, { align: 'center' })
     
     doc.setFontSize(14)
     doc.setFont('helvetica', 'normal')
@@ -260,7 +260,7 @@ const Relatorios = () => {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
-    doc.text('James Transportes - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
+    doc.text('JCS Transportes e Logistica - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
     
     // Salvar PDF
     const fileName = `relatorio-${format(new Date(), 'yyyy-MM')}-${Date.now()}.pdf`

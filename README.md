@@ -1,4 +1,4 @@
-# 🚚 James Transportes - Sistema de Gestão
+# 🚚 JCS Transportes e Logística - Sistema de Gestão
 
 Sistema completo para gestão de transportes com cálculo automático de preços baseado em KM, peso e taxas de arrancada.
 
