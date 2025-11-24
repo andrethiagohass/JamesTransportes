@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { FileDown } from 'lucide-react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 interface Lancamento {
   id: string
@@ -82,9 +85,203 @@ const Relatorios = () => {
     }
   }
 
+  const exportarPDF = () => {
+    if (!stats || !lancamentos.length) {
+      alert('Não há dados para exportar')
+      return
+    }
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    
+    // Header - Título
+    doc.setFillColor(14, 165, 233) // primary-500
+    doc.rect(0, 0, pageWidth, 35, 'F')
+    
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('JAMES TRANSPORTES', pageWidth / 2, 15, { align: 'center' })
+    
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Relatorio Mensal de Lancamentos', pageWidth / 2, 25, { align: 'center' })
+    
+    // Informações do Filtro
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Período:', 14, 45)
+    doc.setFont('helvetica', 'normal')
+    doc.text(stats.mes.charAt(0).toUpperCase() + stats.mes.slice(1), 35, 45)
+    
+    doc.setFont('helvetica', 'bold')
+    doc.text('Data de Emissão:', 14, 52)
+    doc.setFont('helvetica', 'normal')
+    doc.text(format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }), 52, 52)
+    
+    // Resumo - Cards de Estatísticas
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Resumo do Período', 14, 65)
+    
+    // Boxes com estatísticas
+    const boxY = 72
+    const boxHeight = 20
+    const boxWidth = 45
+    const spacing = 2
+    
+    // Box 1 - Total de Viagens
+    doc.setFillColor(219, 234, 254) // blue-100
+    doc.roundedRect(14, boxY, boxWidth, boxHeight, 2, 2, 'F')
+    doc.setFontSize(9)
+    doc.setTextColor(100, 100, 100)
+    doc.text('Total de Viagens', 16, boxY + 6)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(29, 78, 216) // blue-700
+    doc.text(stats.totalViagens.toString(), 16, boxY + 15)
+    
+    // Box 2 - Total KM
+    doc.setFillColor(220, 252, 231) // green-100
+    doc.roundedRect(14 + boxWidth + spacing, boxY, boxWidth, boxHeight, 2, 2, 'F')
+    doc.setFontSize(9)
+    doc.setTextColor(100, 100, 100)
+    doc.text('Total KM', 16 + boxWidth + spacing, boxY + 6)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(21, 128, 61) // green-700
+    doc.text(`${stats.totalKm.toFixed(0)} km`, 16 + boxWidth + spacing, boxY + 15)
+    
+    // Box 3 - Total Peso
+    doc.setFillColor(254, 243, 199) // orange-100
+    doc.roundedRect(14 + (boxWidth + spacing) * 2, boxY, boxWidth, boxHeight, 2, 2, 'F')
+    doc.setFontSize(9)
+    doc.setTextColor(100, 100, 100)
+    doc.text('Total Peso', 16 + (boxWidth + spacing) * 2, boxY + 6)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(194, 65, 12) // orange-700
+    doc.text(`${stats.totalPeso.toFixed(0)} kg`, 16 + (boxWidth + spacing) * 2, boxY + 15)
+    
+    // Box 4 - Receita Total
+    doc.setFillColor(224, 242, 254) // sky-100
+    doc.roundedRect(14 + (boxWidth + spacing) * 3, boxY, boxWidth, boxHeight, 2, 2, 'F')
+    doc.setFontSize(9)
+    doc.setTextColor(100, 100, 100)
+    doc.text('Receita Total', 16 + (boxWidth + spacing) * 3, boxY + 6)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(14, 165, 233) // primary-500
+    doc.text(`R$ ${stats.totalReceita.toFixed(2)}`, 16 + (boxWidth + spacing) * 3, boxY + 15)
+    
+    // Médias
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('Médias por Viagem', 14, 105)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`KM Médio: ${(stats.totalKm / stats.totalViagens).toFixed(2)} km`, 14, 112)
+    doc.text(`Peso Médio: ${(stats.totalPeso / stats.totalViagens).toFixed(2)} kg`, 80, 112)
+    doc.text(`Receita Média: R$ ${(stats.totalReceita / stats.totalViagens).toFixed(2)}`, 146, 112)
+    
+    // Tabela de Lançamentos
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Detalhamento dos Lançamentos', 14, 125)
+    
+    const tableData = lancamentos.map((lanc) => [
+      format(parseISO(lanc.data), 'dd/MM/yyyy'),
+      `${lanc.km_total} km`,
+      `${lanc.peso} kg`,
+      `R$ ${lanc.preco_total.toFixed(2)}`
+    ])
+    
+    autoTable(doc, {
+      startY: 130,
+      head: [['Data', 'KM Total', 'Peso', 'Valor']],
+      body: tableData,
+      theme: 'striped',
+      margin: { left: 14, right: 14 },
+      tableWidth: 'auto',
+      headStyles: {
+        fillColor: [14, 165, 233],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 10,
+        halign: 'center'
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+        halign: 'center'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center', fontStyle: 'bold', textColor: [22, 163, 74] }
+      }
+    })
+    
+    // Footer com totais
+    const finalY = (doc as any).lastAutoTable.finalY + 10
+    
+    doc.setFillColor(240, 240, 240)
+    doc.rect(14, finalY, pageWidth - 28, 25, 'F')
+    
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('TOTAIS DO PERÍODO:', 18, finalY + 8)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Viagens: ${stats.totalViagens}`, 18, finalY + 15)
+    doc.text(`KM: ${stats.totalKm.toFixed(0)}`, 60, finalY + 15)
+    doc.text(`Peso: ${stats.totalPeso.toFixed(0)} kg`, 100, finalY + 15)
+    
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(22, 163, 74)
+    doc.text(`Receita: R$ ${stats.totalReceita.toFixed(2)}`, 150, finalY + 15)
+    
+    // Linha inferior
+    doc.setDrawColor(14, 165, 233)
+    doc.setLineWidth(0.5)
+    doc.line(14, finalY + 22, pageWidth - 14, finalY + 22)
+    
+    // Rodapé
+    const footerY = doc.internal.pageSize.getHeight() - 10
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 100, 100)
+    doc.text('James Transportes - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
+    
+    // Salvar PDF
+    const fileName = `relatorio-${format(new Date(), 'yyyy-MM')}-${Date.now()}.pdf`
+    doc.save(fileName)
+  }
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Relatórios</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Relatórios</h1>
+        
+        {stats && lancamentos.length > 0 && (
+          <button
+            onClick={exportarPDF}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+          >
+            <FileDown size={20} />
+            <span>Exportar PDF</span>
+          </button>
+        )}
+      </div>
 
       <div className="card mb-8">
         <div className="flex items-center gap-4 mb-6">
