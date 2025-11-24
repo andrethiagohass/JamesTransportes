@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
   Home, 
   DollarSign, 
@@ -8,9 +8,12 @@ import {
   FileText, 
   BarChart3,
   Menu,
-  X
+  X,
+  LogOut,
+  User
 } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 interface LayoutProps {
   children: ReactNode
@@ -18,16 +21,25 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Preço/KM', href: '/preco-km', icon: DollarSign },
     { name: 'Preço/KG', href: '/preco-kg', icon: Weight },
     { name: 'Taxa Arrancada', href: '/taxa-arrancada', icon: TrendingUp },
     { name: 'Lançamentos', href: '/lancamentos', icon: FileText },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
   ]
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  const username = localStorage.getItem('james_username') || 'Usuário'
 
   const isActive = (path: string) => location.pathname === path
 
@@ -41,6 +53,21 @@ const Layout = ({ children }: LayoutProps) => {
               <h1 className="text-2xl font-bold">🚚 James Transportes</h1>
             </div>
             
+            {/* User info and logout - Desktop */}
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm">
+                <User size={18} />
+                <span className="font-medium">{username}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-800 rounded-lg transition-colors text-sm font-medium"
+              >
+                <LogOut size={18} />
+                <span>Sair</span>
+              </button>
+            </div>
+
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -87,6 +114,22 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   <X size={24} />
                 </button>
+                
+                {/* User info - Mobile */}
+                <div className="mb-4 p-3 bg-primary-50 rounded-lg">
+                  <div className="flex items-center gap-2 text-primary-700 mb-2">
+                    <User size={18} />
+                    <span className="font-medium">{username}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <LogOut size={18} />
+                    <span>Sair</span>
+                  </button>
+                </div>
+
                 <nav className="space-y-2">
                   {navigation.map((item) => {
                     const Icon = item.icon
