@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 
 interface Lancamento {
   id: string
@@ -193,7 +194,7 @@ const Relatorios = () => {
     doc.text('Detalhamento dos Lançamentos', 14, 125)
     
     const tableData = lancamentos.map((lanc) => [
-      format(parseISO(lanc.data), 'dd/MM/yyyy'),
+      formatDateBR(lanc.data),
       `${lanc.km_total} km`,
       `${lanc.peso} kg`,
       `R$ ${lanc.preco_total.toFixed(2)}`
@@ -376,8 +377,8 @@ const Relatorios = () => {
                     {lancamentos.map((lanc) => (
                       <tr key={lanc.id} className="hover:bg-gray-50">
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                          <span className="hidden sm:inline">{format(parseISO(lanc.data), 'dd/MM/yyyy', { locale: ptBR })}</span>
-                          <span className="sm:hidden">{format(parseISO(lanc.data), 'dd/MM', { locale: ptBR })}</span>
+                          <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
+                          <span className="sm:hidden">{formatDateShortBR(lanc.data)}</span>
                         </td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{lanc.km_total} km</td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{lanc.peso} kg</td>

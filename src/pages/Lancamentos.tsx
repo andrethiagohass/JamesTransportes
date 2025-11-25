@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2, Calculator } from 'lucide-react'
+import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 
 interface Lancamento {
   id: string
@@ -325,8 +326,8 @@ const Lancamentos = () => {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                      <span className="hidden sm:inline">{new Date(lanc.data).toLocaleDateString('pt-BR')}</span>
-                      <span className="sm:hidden">{new Date(lanc.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                      <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
+                      <span className="sm:hidden">{formatDateShortBR(lanc.data)}</span>
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <div>
