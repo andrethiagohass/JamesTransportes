@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2 } from 'lucide-react'
+import { formatCurrency } from '../utils/formatUtils'
 
 interface PrecoKmType {
   id: string
@@ -180,7 +181,7 @@ const PrecoKm = () => {
                 {precos.map((preco) => (
                   <tr key={preco.id} className="hover:bg-gray-50">
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium">
-                      R$ {preco.valor.toFixed(2)}
+                      {formatCurrency(preco.valor)}
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <button

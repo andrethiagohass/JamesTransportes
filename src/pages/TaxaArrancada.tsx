@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2 } from 'lucide-react'
+import { formatKm, formatCurrency } from '../utils/formatUtils'
 
 interface TaxaType {
   id: string
@@ -210,10 +211,10 @@ const TaxaArrancada = () => {
                 {taxas.map((taxa) => (
                   <tr key={taxa.id} className="hover:bg-gray-50">
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium">
-                      {taxa.km_inicial} - {taxa.km_final} km
+                      {formatKm(taxa.km_inicial)} - {formatKm(taxa.km_final)} km
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                      R$ {taxa.valor.toFixed(2)}
+                      {formatCurrency(taxa.valor)}
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <button

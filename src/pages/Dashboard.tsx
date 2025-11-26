@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { BarChart3, TrendingUp, DollarSign, Package } from 'lucide-react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 
 interface Stats {
   totalLancamentos: number
@@ -70,21 +71,21 @@ const Dashboard = () => {
       value: stats.totalKm,
       icon: TrendingUp,
       color: 'bg-green-500',
-      format: (val: number) => `${val.toFixed(0)} km`,
+      format: (val: number) => `${formatKm(val)} km`,
     },
     {
       title: 'Total Peso',
       value: stats.totalPeso,
       icon: Package,
       color: 'bg-orange-500',
-      format: (val: number) => `${val.toFixed(0)} kg`,
+      format: (val: number) => `${formatPeso(val)} kg`,
     },
     {
       title: 'Receita Total',
       value: stats.totalReceita,
       icon: DollarSign,
       color: 'bg-primary-500',
-      format: (val: number) => `R$ ${val.toFixed(2)}`,
+      format: (val: number) => formatCurrency(val),
     },
   ]
 

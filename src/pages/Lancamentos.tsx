@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2, Calculator } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
+import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 
 interface Lancamento {
   id: string
@@ -254,26 +255,26 @@ const Lancamentos = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
                   <p className="text-gray-600">KM Total</p>
-                  <p className="font-bold text-lg">{kmTotal.toFixed(0)} km</p>
+                  <p className="font-bold text-lg">{formatKm(kmTotal)} km</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Valor KM</p>
-                  <p className="font-bold text-lg">R$ {(kmTotal * valorKm).toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">{kmTotal}km × R${valorKm.toFixed(2)}</p>
+                  <p className="font-bold text-lg">{formatCurrency(kmTotal * valorKm)}</p>
+                  <p className="text-xs text-gray-500">{formatKm(kmTotal)}km × {formatCurrency(valorKm)}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Valor Peso</p>
-                  <p className="font-bold text-lg">R$ {(parseFloat(peso || '0') * valorPeso).toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">{peso}kg × R${valorPeso.toFixed(2)}</p>
+                  <p className="font-bold text-lg">{formatCurrency(parseFloat(peso || '0') * valorPeso)}</p>
+                  <p className="text-xs text-gray-500">{formatPeso(parseFloat(peso || '0'))}kg × {formatCurrency(valorPeso)}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Taxa Arrancada</p>
-                  <p className="font-bold text-lg">R$ {taxaArrancada.toFixed(2)}</p>
+                  <p className="font-bold text-lg">{formatCurrency(taxaArrancada)}</p>
                 </div>
               </div>
               <div className="pt-3 border-t border-blue-200 mt-3">
                 <p className="text-gray-600 text-sm">Preço Total</p>
-                <p className="font-bold text-2xl text-blue-900">R$ {precoTotal.toFixed(2)}</p>
+                <p className="font-bold text-2xl text-blue-900">{formatCurrency(precoTotal)}</p>
               </div>
             </div>
           )}
@@ -331,16 +332,16 @@ const Lancamentos = () => {
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <div>
-                        <span className="font-medium">{lanc.km_total} km</span>
+                        <span className="font-medium">{formatKm(lanc.km_total)} km</span>
                         <div className="text-xs text-gray-500 hidden sm:block">
-                          {lanc.km_inicial} → {lanc.km_final}
+                          {formatKm(lanc.km_inicial)} → {formatKm(lanc.km_final)}
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">{lanc.peso} kg</td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">{formatPeso(lanc.peso)} kg</td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-600">
-                      <span className="hidden sm:inline">R$ {lanc.preco_total.toFixed(2)}</span>
-                      <span className="sm:hidden">R$ {lanc.preco_total.toFixed(0)}</span>
+                      <span className="hidden sm:inline">{formatCurrency(lanc.preco_total)}</span>
+                      <span className="sm:hidden">R$ {formatKm(lanc.preco_total)}</span>
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-right">
                       <button

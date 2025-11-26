@@ -7,6 +7,7 @@ import { FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
+import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 
 interface Lancamento {
   id: string
@@ -152,7 +153,7 @@ const Relatorios = () => {
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(21, 128, 61) // green-700
-    doc.text(`${stats.totalKm.toFixed(0)} km`, 16 + boxWidth + spacing, boxY + 15)
+    doc.text(`${formatKm(stats.totalKm)} km`, 16 + boxWidth + spacing, boxY + 15)
     
     // Box 3 - Total Peso
     doc.setFillColor(254, 243, 199) // orange-100
@@ -163,7 +164,7 @@ const Relatorios = () => {
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(194, 65, 12) // orange-700
-    doc.text(`${stats.totalPeso.toFixed(0)} kg`, 16 + (boxWidth + spacing) * 2, boxY + 15)
+    doc.text(`${formatPeso(stats.totalPeso)} kg`, 16 + (boxWidth + spacing) * 2, boxY + 15)
     
     // Box 4 - Receita Total
     doc.setFillColor(224, 242, 254) // sky-100
@@ -174,7 +175,7 @@ const Relatorios = () => {
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(14, 165, 233) // primary-500
-    doc.text(`R$ ${stats.totalReceita.toFixed(2)}`, 16 + (boxWidth + spacing) * 3, boxY + 15)
+    doc.text(formatCurrency(stats.totalReceita), 16 + (boxWidth + spacing) * 3, boxY + 15)
     
     // Médias
     doc.setFontSize(12)
@@ -184,9 +185,9 @@ const Relatorios = () => {
     
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.text(`KM Médio: ${(stats.totalKm / stats.totalViagens).toFixed(2)} km`, 14, 112)
-    doc.text(`Peso Médio: ${(stats.totalPeso / stats.totalViagens).toFixed(2)} kg`, 80, 112)
-    doc.text(`Receita Média: R$ ${(stats.totalReceita / stats.totalViagens).toFixed(2)}`, 146, 112)
+    doc.text(`KM Médio: ${formatKm(stats.totalKm / stats.totalViagens)} km`, 14, 112)
+    doc.text(`Peso Médio: ${formatPeso(stats.totalPeso / stats.totalViagens)} kg`, 80, 112)
+    doc.text(`Receita Média: ${formatCurrency(stats.totalReceita / stats.totalViagens)}`, 146, 112)
     
     // Tabela de Lançamentos
     doc.setFontSize(12)
@@ -195,9 +196,9 @@ const Relatorios = () => {
     
     const tableData = lancamentos.map((lanc) => [
       formatDateBR(lanc.data),
-      `${lanc.km_total} km`,
-      `${lanc.peso} kg`,
-      `R$ ${lanc.preco_total.toFixed(2)}`
+      `${formatKm(lanc.km_total)} km`,
+      `${formatPeso(lanc.peso)} kg`,
+      formatCurrency(lanc.preco_total)
     ])
     
     autoTable(doc, {
@@ -244,12 +245,12 @@ const Relatorios = () => {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text(`Viagens: ${stats.totalViagens}`, 18, finalY + 15)
-    doc.text(`KM: ${stats.totalKm.toFixed(0)}`, 60, finalY + 15)
-    doc.text(`Peso: ${stats.totalPeso.toFixed(0)} kg`, 100, finalY + 15)
+    doc.text(`KM: ${formatKm(stats.totalKm)}`, 60, finalY + 15)
+    doc.text(`Peso: ${formatPeso(stats.totalPeso)} kg`, 100, finalY + 15)
     
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(22, 163, 74)
-    doc.text(`Receita: R$ ${stats.totalReceita.toFixed(2)}`, 150, finalY + 15)
+    doc.text(`Receita: ${formatCurrency(stats.totalReceita)}`, 150, finalY + 15)
     
     // Linha inferior
     doc.setDrawColor(14, 165, 233)
@@ -311,15 +312,15 @@ const Relatorios = () => {
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Total KM</p>
-                <p className="text-2xl font-bold text-green-700">{stats.totalKm.toFixed(0)} km</p>
+                <p className="text-2xl font-bold text-green-700">{formatKm(stats.totalKm)} km</p>
               </div>
               <div className="bg-orange-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Total Peso</p>
-                <p className="text-2xl font-bold text-orange-700">{stats.totalPeso.toFixed(0)} kg</p>
+                <p className="text-2xl font-bold text-orange-700">{formatPeso(stats.totalPeso)} kg</p>
               </div>
               <div className="bg-primary-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Receita Total</p>
-                <p className="text-2xl font-bold text-primary-700">R$ {stats.totalReceita.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary-700">{formatCurrency(stats.totalReceita)}</p>
               </div>
             </div>
 
@@ -329,15 +330,15 @@ const Relatorios = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">KM Médio</p>
-                  <p className="text-lg font-bold">{(stats.totalKm / stats.totalViagens).toFixed(2)} km</p>
+                  <p className="text-lg font-bold">{formatKm(stats.totalKm / stats.totalViagens)} km</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Peso Médio</p>
-                  <p className="text-lg font-bold">{(stats.totalPeso / stats.totalViagens).toFixed(2)} kg</p>
+                  <p className="text-lg font-bold">{formatPeso(stats.totalPeso / stats.totalViagens)} kg</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Receita Média</p>
-                  <p className="text-lg font-bold">R$ {(stats.totalReceita / stats.totalViagens).toFixed(2)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(stats.totalReceita / stats.totalViagens)}</p>
                 </div>
               </div>
             </div>
@@ -380,11 +381,11 @@ const Relatorios = () => {
                           <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
                           <span className="sm:hidden">{formatDateShortBR(lanc.data)}</span>
                         </td>
-                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{lanc.km_total} km</td>
-                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{lanc.peso} kg</td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{formatKm(lanc.km_total)} km</td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{formatPeso(lanc.peso)} kg</td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-green-600">
-                          <span className="hidden sm:inline">R$ {lanc.preco_total.toFixed(2)}</span>
-                          <span className="sm:hidden">R$ {lanc.preco_total.toFixed(0)}</span>
+                          <span className="hidden sm:inline">{formatCurrency(lanc.preco_total)}</span>
+                          <span className="sm:hidden">R$ {formatKm(lanc.preco_total)}</span>
                         </td>
                       </tr>
                     ))}
