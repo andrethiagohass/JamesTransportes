@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { FileDown } from 'lucide-react'
@@ -26,9 +26,15 @@ interface MesData {
 }
 
 const Relatorios = () => {
+  // Criar datas padrão sem timezone
   const now = new Date()
-  const [dataInicial, setDataInicial] = useState(format(startOfMonth(now), 'yyyy-MM-dd'))
-  const [dataFinal, setDataFinal] = useState(format(endOfMonth(now), 'yyyy-MM-dd'))
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const firstDay = `${year}-${month}-01`
+  const lastDay = `${year}-${month}-${new Date(year, now.getMonth() + 1, 0).getDate()}`
+  
+  const [dataInicial, setDataInicial] = useState(firstDay)
+  const [dataFinal, setDataFinal] = useState(lastDay)
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [stats, setStats] = useState<MesData | null>(null)
   const [dadosGrafico, setDadosGrafico] = useState<any[]>([])
@@ -58,9 +64,9 @@ const Relatorios = () => {
         const totalPeso = data.reduce((sum: number, item: any) => sum + item.peso, 0)
         const totalReceita = data.reduce((sum: number, item: any) => sum + item.preco_total, 0)
 
-        // Criar label do período
-        const dataInicialFormatada = format(new Date(dataInicial), "dd/MM/yyyy", { locale: ptBR })
-        const dataFinalFormatada = format(new Date(dataFinal), "dd/MM/yyyy", { locale: ptBR })
+        // Criar label do período (sem conversão de timezone)
+        const dataInicialFormatada = formatDateBR(dataInicial)
+        const dataFinalFormatada = formatDateBR(dataFinal)
         const periodoLabel = `${dataInicialFormatada} a ${dataFinalFormatada}`
 
         setStats({
@@ -267,9 +273,7 @@ const Relatorios = () => {
     doc.text('JCS Transportes e Logistica - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
     
     // Salvar PDF
-    const dataInicialSimples = format(new Date(dataInicial), 'yyyy-MM-dd')
-    const dataFinalSimples = format(new Date(dataFinal), 'yyyy-MM-dd')
-    const fileName = `relatorio-${dataInicialSimples}-ate-${dataFinalSimples}.pdf`
+    const fileName = `relatorio-${dataInicial}-ate-${dataFinal}.pdf`
     doc.save(fileName)
   }
 
