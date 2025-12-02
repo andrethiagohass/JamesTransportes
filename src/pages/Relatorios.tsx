@@ -26,7 +26,9 @@ interface MesData {
 }
 
 const Relatorios = () => {
-  const [mesAno, setMesAno] = useState(format(new Date(), 'yyyy-MM'))
+  const now = new Date()
+  const [dataInicial, setDataInicial] = useState(format(startOfMonth(now), 'yyyy-MM-dd'))
+  const [dataFinal, setDataFinal] = useState(format(endOfMonth(now), 'yyyy-MM-dd'))
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [stats, setStats] = useState<MesData | null>(null)
   const [dadosGrafico, setDadosGrafico] = useState<any[]>([])
@@ -34,21 +36,16 @@ const Relatorios = () => {
 
   useEffect(() => {
     fetchRelatorio()
-  }, [mesAno])
+  }, [dataInicial, dataFinal])
 
   const fetchRelatorio = async () => {
     setLoading(true)
     try {
-      const [ano, mes] = mesAno.split('-')
-      const date = new Date(parseInt(ano), parseInt(mes) - 1, 1)
-      const start = startOfMonth(date)
-      const end = endOfMonth(date)
-
       const { data, error } = await supabase
         .from('lancamentos')
         .select('*')
-        .gte('data', format(start, 'yyyy-MM-dd'))
-        .lte('data', format(end, 'yyyy-MM-dd'))
+        .gte('data', dataInicial)
+        .lte('data', dataFinal)
         .order('data', { ascending: true })
 
       if (error) throw error
@@ -61,8 +58,13 @@ const Relatorios = () => {
         const totalPeso = data.reduce((sum: number, item: any) => sum + item.peso, 0)
         const totalReceita = data.reduce((sum: number, item: any) => sum + item.preco_total, 0)
 
+        // Criar label do período
+        const dataInicialFormatada = format(new Date(dataInicial), "dd/MM/yyyy", { locale: ptBR })
+        const dataFinalFormatada = format(new Date(dataFinal), "dd/MM/yyyy", { locale: ptBR })
+        const periodoLabel = `${dataInicialFormatada} a ${dataFinalFormatada}`
+
         setStats({
-          mes: format(date, 'MMMM yyyy', { locale: ptBR }),
+          mes: periodoLabel,
           totalViagens,
           totalKm,
           totalPeso,
@@ -107,7 +109,7 @@ const Relatorios = () => {
     
     doc.setFontSize(14)
     doc.setFont('helvetica', 'normal')
-    doc.text('Relatorio Mensal de Lancamentos', pageWidth / 2, 25, { align: 'center' })
+    doc.text('Relatorio de Lancamentos', pageWidth / 2, 25, { align: 'center' })
     
     // Informações do Filtro
     doc.setTextColor(0, 0, 0)
@@ -115,7 +117,7 @@ const Relatorios = () => {
     doc.setFont('helvetica', 'bold')
     doc.text('Período:', 14, 45)
     doc.setFont('helvetica', 'normal')
-    doc.text(stats.mes.charAt(0).toUpperCase() + stats.mes.slice(1), 35, 45)
+    doc.text(stats.mes, 35, 45)
     
     doc.setFont('helvetica', 'bold')
     doc.text('Data de Emissão:', 14, 52)
@@ -265,7 +267,9 @@ const Relatorios = () => {
     doc.text('JCS Transportes e Logistica - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
     
     // Salvar PDF
-    const fileName = `relatorio-${format(new Date(), 'yyyy-MM')}-${Date.now()}.pdf`
+    const dataInicialSimples = format(new Date(dataInicial), 'yyyy-MM-dd')
+    const dataFinalSimples = format(new Date(dataFinal), 'yyyy-MM-dd')
+    const fileName = `relatorio-${dataInicialSimples}-ate-${dataFinalSimples}.pdf`
     doc.save(fileName)
   }
 
@@ -286,21 +290,35 @@ const Relatorios = () => {
       </div>
 
       <div className="card mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <label className="label mb-0">Selecionar Mês:</label>
-          <input
-            type="month"
-            value={mesAno}
-            onChange={(e) => setMesAno(e.target.value)}
-            className="input-field w-auto"
-          />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+          <label className="label mb-0 font-semibold text-gray-700">Período:</label>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">De:</label>
+              <input
+                type="date"
+                value={dataInicial}
+                onChange={(e) => setDataInicial(e.target.value)}
+                className="input-field w-auto"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Até:</label>
+              <input
+                type="date"
+                value={dataFinal}
+                onChange={(e) => setDataFinal(e.target.value)}
+                className="input-field w-auto"
+              />
+            </div>
+          </div>
         </div>
 
         {loading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
         ) : stats ? (
           <>
-            <h2 className="text-2xl font-semibold mb-6 text-primary-700 capitalize">
+            <h2 className="text-2xl font-semibold mb-6 text-primary-700">
               {stats.mes}
             </h2>
 
