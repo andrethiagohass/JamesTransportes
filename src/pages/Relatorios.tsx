@@ -279,7 +279,7 @@ const Relatorios = () => {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
-    doc.text('JCS Transportes e Logistica - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
+    doc.text('Hasstreio - Sistema de Gerenciamento', pageWidth / 2, footerY, { align: 'center' })
     
     // Salvar PDF
     const fileName = `relatorio-${dataInicial}-ate-${dataFinal}.pdf`
