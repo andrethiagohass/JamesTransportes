@@ -103,12 +103,17 @@ const Admin = () => {
         // Salvar sessão atual do super admin
         const { data: { session: currentSession } } = await supabase.auth.getSession()
 
+        // Determinar a URL de redirecionamento correta
+        const redirectUrl = window.location.origin.includes('github.io')
+          ? 'https://andrethiagohass.github.io/JamesTransportes/'
+          : `${window.location.origin}/`
+
         // 1. Criar usuário usando signUp (funciona no cliente)
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: email,
           password: senha,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: redirectUrl,
             data: {
               nome: nome
             }
