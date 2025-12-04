@@ -193,23 +193,102 @@ const Admin = () => {
     setSenha('') // Não preenche a senha
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?\n\nAVISO: O usuário ainda existirá no Supabase Auth, mas não terá acesso ao sistema.')) return
+  const handleDelete = async (id: string, tenantId: string, userName: string) => {
+    // Confirmação detalhada
+    const confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!
+
+Você está prestes a EXCLUIR PERMANENTEMENTE:
+
+👤 Usuário: ${userName}
+🏢 Tenant ID: ${tenantId}
+
+📊 Serão removidos TODOS os dados:
+• Lançamentos de fretes
+• Configurações de preço por km
+• Configurações de preço por kg
+• Configurações de taxa de arrancada
+• Perfil do usuário
+
+Esta ação NÃO pode ser desfeita!
+
+Deseja realmente continuar?`
+
+    if (!confirm(confirmMessage)) return
+
+    // Segunda confirmação para ter certeza
+    if (!confirm('Confirma NOVAMENTE a exclusão permanente de todos os dados?')) return
+
+    setLoading(true)
 
     try {
-      // Deletar apenas o perfil (RLS impede acesso ao sistema)
-      const { error } = await supabase
+      // 1. Deletar lançamentos
+      const { error: lancamentosError } = await supabase
+        .from('lancamentos')
+        .delete()
+        .eq('tenant_id', tenantId)
+
+      if (lancamentosError) {
+        console.error('Erro ao deletar lançamentos:', lancamentosError)
+        throw new Error('Erro ao deletar lançamentos')
+      }
+
+      // 2. Deletar preços por km
+      const { error: precoKmError } = await supabase
+        .from('preco_km')
+        .delete()
+        .eq('tenant_id', tenantId)
+
+      if (precoKmError) {
+        console.error('Erro ao deletar preço km:', precoKmError)
+        throw new Error('Erro ao deletar configurações de preço por km')
+      }
+
+      // 3. Deletar preços por kg
+      const { error: precoKgError } = await supabase
+        .from('preco_kg')
+        .delete()
+        .eq('tenant_id', tenantId)
+
+      if (precoKgError) {
+        console.error('Erro ao deletar preço kg:', precoKgError)
+        throw new Error('Erro ao deletar configurações de preço por kg')
+      }
+
+      // 4. Deletar taxas de arrancada
+      const { error: taxaError } = await supabase
+        .from('taxa_arrancada')
+        .delete()
+        .eq('tenant_id', tenantId)
+
+      if (taxaError) {
+        console.error('Erro ao deletar taxa arrancada:', taxaError)
+        throw new Error('Erro ao deletar configurações de taxa de arrancada')
+      }
+
+      // 5. Deletar perfil do usuário (por último)
+      const { error: profileError } = await supabase
         .from('user_profiles')
         .delete()
         .eq('id', id)
 
-      if (error) throw error
+      if (profileError) {
+        console.error('Erro ao deletar perfil:', profileError)
+        throw new Error('Erro ao deletar perfil do usuário')
+      }
 
-      toast.success('Usuário removido do sistema com sucesso')
+      toast.success(
+        `✅ Usuário e todos os dados do tenant foram removidos permanentemente!`,
+        'Exclusão Completa'
+      )
       fetchUsuarios()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao excluir:', error)
-      toast.error('Erro ao excluir usuário')
+      toast.error(
+        error.message || 'Erro ao excluir usuário e dados. Algumas informações podem não ter sido removidas.',
+        'Erro na Exclusão'
+      )
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -454,9 +533,9 @@ const Admin = () => {
                               <Edit2 size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(usuario.id)}
+                              onClick={() => handleDelete(usuario.id, usuario.tenant_id, usuario.nome || usuario.email)}
                               className="text-red-600 hover:text-red-800"
-                              title="Excluir"
+                              title="Excluir usuário e todos os dados"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -492,6 +571,11 @@ const Admin = () => {
           <li>• 🔒 Senhas são gerenciadas pelo Supabase (criptografia robusta)</li>
           <li>• 📧 <strong>Importante:</strong> Usuário receberá email de confirmação ao ser criado</li>
           <li>• 🔑 Para alterar senha, usuário deve usar "Esqueci minha senha" no login</li>
+          <li className="pt-2 border-t border-blue-200">
+            • 🗑️ <strong className="text-red-700">EXCLUSÃO PERMANENTE:</strong> Ao excluir um usuário, 
+            TODOS os dados do tenant são removidos (lançamentos, configurações, etc). 
+            <strong className="text-red-700"> Esta ação é IRREVERSÍVEL!</strong>
+          </li>
         </ul>
       </div>
 
