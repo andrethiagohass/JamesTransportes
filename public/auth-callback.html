@@ -4,6 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Processando...</title>
+  
+  <!-- SCRIPT NO TOPO DO HEAD - PRIMEIRA COISA A EXECUTAR -->
+  <script>
+    // CAPTURA O HASH ANTES DE QUALQUER COISA - ATÉ ANTES DO CSS
+    (function() {
+      // Tentar múltiplas formas de capturar o hash
+      var hash = window.location.hash || document.location.hash || '';
+      var href = window.location.href || document.location.href || '';
+      
+      // Se não tem hash na variável, extrair da href
+      if (!hash && href.indexOf('#') !== -1) {
+        hash = '#' + href.split('#')[1];
+      }
+      
+      console.log('🔗 AUTH CALLBACK EXECUTANDO');
+      console.log('  - Hash via window.location.hash:', window.location.hash);
+      console.log('  - Hash via document.location.hash:', document.location.hash);
+      console.log('  - href completa:', href);
+      console.log('  - Hash extraído:', hash ? hash.substring(0, 80) + '...' : '(VAZIO)');
+      
+      // Se tem hash, processar IMEDIATAMENTE
+      if (hash && hash.length > 1) {
+        console.log('✅ HASH ENCONTRADO!');
+        
+        // Salvar em MÚLTIPLOS lugares para garantir
+        try {
+          localStorage.setItem('supabase_recovery_hash', hash);
+          sessionStorage.setItem('supabase_recovery_hash', hash);
+          console.log('💾 Hash salvo em localStorage E sessionStorage');
+        } catch(e) {
+          console.error('❌ Erro ao salvar:', e);
+        }
+        
+        // Redirecionar COM o hash
+        var targetUrl = window.location.origin + '/JamesTransportes/reset-password' + hash;
+        console.log('🚀 Redirecionando para:', targetUrl);
+        
+        // Usar location.replace para evitar histórico
+        window.location.replace(targetUrl);
+        
+      } else {
+        console.log('⚠️ Hash VAZIO ou inexistente');
+        console.log('  - Tentando recuperar do storage...');
+        
+        var savedHash = localStorage.getItem('supabase_recovery_hash') || 
+                       sessionStorage.getItem('supabase_recovery_hash');
+        
+        if (savedHash) {
+          console.log('📦 Hash recuperado do storage!');
+          window.location.replace(window.location.origin + '/JamesTransportes/reset-password' + savedHash);
+        } else {
+          console.log('❌ Nenhum hash em storage, indo para reset-password sem hash');
+          window.location.replace(window.location.origin + '/JamesTransportes/reset-password?from=callback');
+        }
+      }
+    })();
+  </script>
+  
   <style>
     body {
       display: flex;
@@ -32,42 +90,12 @@
       100% { transform: rotate(360deg); }
     }
   </style>
-  
-  <!-- SCRIPT INLINE - EXECUTA IMEDIATAMENTE, SEM ESPERAR NADA -->
-  <script>
-    // CAPTURAR IMEDIATAMENTE - ANTES DE QUALQUER COISA
-    (function() {
-      var hash = window.location.hash;
-      
-      console.log('🔗 AUTH CALLBACK - Hash capturado:', hash ? hash.substring(0, 50) + '...' : '(vazio)');
-      console.log('🔗 URL completa:', window.location.href);
-      
-      if (hash && hash.length > 1) {
-        // SALVAR no localStorage
-        if (hash.indexOf('access_token') !== -1) {
-          try {
-            localStorage.setItem('supabase_recovery_hash', hash);
-            console.log('💾 Hash salvo no localStorage');
-          } catch(e) {
-            console.error('Erro ao salvar no localStorage:', e);
-          }
-        }
-        
-        // Redirecionar IMEDIATAMENTE
-        var newUrl = window.location.origin + '/JamesTransportes/reset-password' + hash;
-        console.log('✅ Redirecionando para:', newUrl);
-        window.location.replace(newUrl);
-      } else {
-        console.log('❌ Hash vazio - redirecionando para reset-password (tentará recuperar do localStorage)');
-        window.location.replace(window.location.origin + '/JamesTransportes/reset-password?from=callback');
-      }
-    })();
-  </script>
 </head>
 <body>
   <div class="container">
     <div class="spinner"></div>
-    <p>Redirecionando...</p>
+    <p>Processando autenticação...</p>
+    <p style="font-size: 12px; opacity: 0.8;">Aguarde enquanto validamos suas credenciais...</p>
   </div>
 </body>
 </html>
