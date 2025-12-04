@@ -29,20 +29,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Verificar sessão ao carregar
   useEffect(() => {
-    // Não verificar sessão se estiver na página de reset de senha
-    const isResetPasswordPage = window.location.pathname.includes('/reset-password')
-    
-    if (!isResetPasswordPage) {
-      checkSession()
-    }
+    checkSession()
 
     // Listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event) // Debug
+      console.log('Current path:', window.location.pathname) // Debug
+      console.log('Session:', session) // Debug
       
       // Ignorar eventos de autenticação na página de reset de senha
-      if (isResetPasswordPage && event !== 'SIGNED_OUT') {
-        console.log('Ignorando evento de auth na página de reset de senha')
+      const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
+                                   window.location.hash.includes('type=recovery')
+      
+      if (isResetPasswordPage) {
+        console.log('⚠️ Página de reset de senha detectada - ignorando evento de auth')
+        setLoading(false)
         return
       }
       
@@ -70,6 +71,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkSession = async () => {
     try {
+      // Não verificar sessão se estiver em página de reset de senha
+      const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
+                                   window.location.hash.includes('type=recovery')
+      
+      if (isResetPasswordPage) {
+        console.log('⚠️ Página de reset - não verificando sessão')
+        setLoading(false)
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session?.user) {
