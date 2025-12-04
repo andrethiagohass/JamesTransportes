@@ -246,7 +246,7 @@ const Lancamentos = () => {
               <label className="label">Carga</label>
               <input
                 type="text"
-                maxLength={5}
+                maxLength={10}
                 value={carga}
                 onChange={(e) => setCarga(e.target.value)}
                 className="input-field"
