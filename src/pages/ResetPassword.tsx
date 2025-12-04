@@ -17,6 +17,46 @@ export default function ResetPassword() {
   const toast = useToast()
 
   useEffect(() => {
+    // Verificar se há code PKCE na URL
+    const searchParams = new URLSearchParams(location.search);
+    const pkceCode = searchParams.get('code');
+    
+    console.log('🔍 ResetPassword - Iniciando verificação');
+    console.log('  - PKCE code:', pkceCode || '(não)');
+    console.log('  - Hash:', location.hash || '(não)');
+    console.log('  - Search:', location.search || '(não)');
+    
+    // Se tem PKCE code, o Supabase vai processar automaticamente
+    if (pkceCode) {
+      console.log('✅ PKCE code detectado - aguardando Supabase processar...');
+      setIsValidToken(true);
+      
+      // Verificar se sessão foi criada após alguns instantes
+      setTimeout(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔍 Verificando sessão após PKCE:', !!session);
+        
+        if (session) {
+          console.log('✅ Sessão criada com sucesso via PKCE');
+          setIsValidToken(true);
+        } else {
+          console.log('⚠️ Aguardando mais um pouco...');
+          // Tentar mais uma vez após 2 segundos
+          setTimeout(async () => {
+            const { data: { session: session2 } } = await supabase.auth.getSession();
+            if (session2) {
+              console.log('✅ Sessão criada (segunda tentativa)');
+              setIsValidToken(true);
+            } else {
+              setErrorMessage('Erro ao processar link de recuperação');
+              toast.error('Link inválido ou expirado', 'Erro');
+            }
+          }, 2000);
+        }
+      }, 1000);
+      return;
+    }
+    
     // Tentar recuperar hash do localStorage se não estiver na URL
     let currentHash = location.hash;
     
@@ -54,7 +94,7 @@ export default function ResetPassword() {
       return
     }
 
-    // Verificar se é um link de recuperação de senha
+    // Verificar se é um link de recuperação de senha (Implicit Flow)
     const checkToken = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       
