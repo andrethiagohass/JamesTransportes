@@ -76,6 +76,32 @@ const AppRoutes = () => {
 }
 
 function App() {
+  // Interceptar tokens de recovery ANTES do React Router processar
+  // Isso evita que o hash seja perdido
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash
+    const isRecoveryToken = hash.includes('type=recovery') || 
+                           (hash.includes('access_token') && hash.includes('type='))
+    const isNotOnResetPage = !window.location.pathname.includes('/reset-password')
+    
+    if (isRecoveryToken && isNotOnResetPage) {
+      console.log('🚨 INTERCEPTANDO: Token de recovery detectado, redirecionando...')
+      console.log('  - pathname atual:', window.location.pathname)
+      console.log('  - hash:', hash)
+      
+      // Redirecionar preservando o hash
+      window.location.href = `${window.location.origin}/JamesTransportes/reset-password${hash}`
+      
+      // Retornar um loading enquanto redireciona
+      return <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecionando para reset de senha...</p>
+        </div>
+      </div>
+    }
+  }
+
   return (
     <Router basename="/JamesTransportes">
       <AuthProvider>
