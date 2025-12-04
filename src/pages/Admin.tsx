@@ -26,6 +26,8 @@ const Admin = () => {
   const [role, setRole] = useState<'user' | 'admin'>('user')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [createdUserInfo, setCreatedUserInfo] = useState<{ email: string; senha: string } | null>(null)
 
   // Verificar se o usuário é super_admin
   const isSuperAdmin = user?.role === 'super_admin'
@@ -145,9 +147,13 @@ const Admin = () => {
           })
         }
         
+        // Mostrar modal com informações do usuário criado
+        setCreatedUserInfo({ email, senha })
+        setShowPasswordModal(true)
+        
         toast.success(
-          `Usuário ${email} criado! Senha temporária enviada por email.`, 
-          'Novo Usuário Criado'
+          `✅ Usuário criado! Email de confirmação enviado para ${email}`, 
+          'Sucesso'
         )
       }
 
@@ -483,6 +489,86 @@ const Admin = () => {
           <li>• 🔑 Para alterar senha, usuário deve usar "Esqueci minha senha" no login</li>
         </ul>
       </div>
+
+      {/* Modal de Senha Criada */}
+      {showPasswordModal && createdUserInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 animate-fadeIn">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <Key className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                ✅ Usuário Criado com Sucesso!
+              </h2>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-blue-900 mb-1">Email:</p>
+                    <p className="text-blue-800 font-mono break-all">{createdUserInfo.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Key className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-amber-900 mb-1">Senha temporária:</p>
+                    <p className="text-amber-800 font-mono text-lg break-all bg-amber-100 px-3 py-2 rounded border border-amber-300">
+                      {createdUserInfo.senha}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-800">
+                  <strong>⚠️ IMPORTANTE:</strong> Esta senha <strong>NÃO</strong> é enviada por email!
+                  Você deve informá-la ao usuário manualmente.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  <strong>📧 Próximos passos:</strong>
+                </p>
+                <ol className="text-sm text-gray-600 mt-2 space-y-1 list-decimal list-inside">
+                  <li>Usuário receberá email de confirmação</li>
+                  <li>Deve clicar no link do email para ativar a conta</li>
+                  <li>Depois poderá fazer login com email e senha informada</li>
+                  <li>Pode alterar a senha em "Esqueci minha senha"</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`Email: ${createdUserInfo.email}\nSenha: ${createdUserInfo.senha}`)
+                  toast.success('Credenciais copiadas para área de transferência!')
+                }}
+                className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+              >
+                📋 Copiar Credenciais
+              </button>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  setCreatedUserInfo(null)
+                }}
+                className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+              >
+                OK, Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
