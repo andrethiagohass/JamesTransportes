@@ -40,8 +40,13 @@ const Login = ({ onLogin }: LoginProps) => {
     setLoading(true)
 
     try {
+      // Usar a URL completa com basepath correto
+      const redirectUrl = window.location.origin.includes('github.io')
+        ? 'https://andrethiagohass.github.io/JamesTransportes/reset-password'
+        : `${window.location.origin}/reset-password`
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: redirectUrl
       })
 
       if (error) throw error

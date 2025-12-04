@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
-import { Lock, Eye, EyeOff } from 'lucide-react'
+import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
@@ -11,10 +11,33 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isValidToken, setIsValidToken] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
   const toast = useToast()
 
   useEffect(() => {
+    // Verificar se há erro na URL (link expirado, etc)
+    const hashParams = new URLSearchParams(location.hash.substring(1))
+    const error = hashParams.get('error')
+    const errorDescription = hashParams.get('error_description')
+    const errorCode = hashParams.get('error_code')
+
+    if (error) {
+      let message = 'Link de recuperação inválido ou expirado'
+      
+      if (errorCode === 'otp_expired') {
+        message = 'O link de recuperação expirou. Por favor, solicite um novo link.'
+      } else if (errorDescription) {
+        message = errorDescription.replace(/\+/g, ' ')
+      }
+      
+      setErrorMessage(message)
+      setIsValidToken(false)
+      toast.error(message, 'Link Inválido')
+      return
+    }
+
     // Verificar se há um token de recuperação válido na URL
     const checkToken = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -22,13 +45,15 @@ export default function ResetPassword() {
       if (session) {
         setIsValidToken(true)
       } else {
-        toast.error('Link de recuperação inválido ou expirado', 'Token Inválido')
-        setTimeout(() => navigate('/login'), 3000)
+        const message = 'Link de recuperação inválido ou expirado'
+        setErrorMessage(message)
+        toast.error(message, 'Token Inválido')
+        setTimeout(() => navigate('/login'), 5000)
       }
     }
 
     checkToken()
-  }, [navigate, toast])
+  }, [navigate, toast, location.hash])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,13 +107,30 @@ export default function ResetPassword() {
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-            <Lock className="w-8 h-8 text-red-600" />
+            <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Link Inválido
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">
+            Link Expirado
           </h1>
-          <p className="text-gray-600">
-            O link de recuperação está inválido ou expirado. Redirecionando para o login...
+          <p className="text-gray-600 mb-6">
+            {errorMessage || 'O link de recuperação está inválido ou expirado.'}
+          </p>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-800">
+              <strong>Dica:</strong> Links de recuperação expiram em 1 hora por segurança.
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate('/login')}
+            className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all shadow-lg hover:shadow-xl"
+          >
+            Voltar ao Login
+          </button>
+          
+          <p className="text-sm text-gray-500 mt-4">
+            Solicite um novo link de recuperação na página de login
           </p>
         </div>
       </div>
