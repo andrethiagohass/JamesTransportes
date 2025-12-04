@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Hasstreio</title>
+  <script>
+    // GitHub Pages SPA redirect solution
+    // Redireciona qualquer URL para index.html preservando a rota
+    const segment = 1; // Para basepath /JamesTransportes/
+    const path = window.location.pathname
+      .split('/')
+      .slice(0, segment + 1)
+      .join('/');
+    
+    const redirect = window.location.pathname.slice(path.length);
+    
+    if (redirect) {
+      window.location.replace(
+        path + '/#' + redirect + window.location.search + window.location.hash
+      );
+    } else {
+      window.location.replace(path + '/');
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecionando...</p>
+</body>
+</html>
