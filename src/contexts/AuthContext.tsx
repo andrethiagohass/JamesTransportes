@@ -33,9 +33,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth event:', event) // Debug
-      console.log('Current path:', window.location.pathname) // Debug
-      console.log('Session:', session) // Debug
+      console.log('🔔 Auth event:', event) // Debug
+      console.log('  - pathname:', window.location.pathname) // Debug
+      console.log('  - hash:', window.location.hash) // Debug
+      console.log('  - session:', session ? 'exists' : 'null') // Debug
       
       // Ignorar eventos de autenticação na página de reset de senha
       const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
@@ -75,6 +76,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
                                    window.location.hash.includes('type=recovery')
       
+      console.log('🔍 checkSession chamado')
+      console.log('  - pathname:', window.location.pathname)
+      console.log('  - hash:', window.location.hash)
+      console.log('  - isResetPasswordPage:', isResetPasswordPage)
+      
       if (isResetPasswordPage) {
         console.log('⚠️ Página de reset - não verificando sessão')
         setLoading(false)
@@ -82,6 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const { data: { session } } = await supabase.auth.getSession()
+      console.log('  - session:', session ? 'exists' : 'null')
       
       if (session?.user) {
         await loadUserProfile(session.user)

@@ -26,23 +26,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Componente principal das rotas
 const AppRoutes = () => {
   const { isAuthenticated, login } = useAuth()
+  
+  // Detectar se é uma URL de reset de senha
+  const isResetPasswordUrl = window.location.pathname.includes('/reset-password') || 
+                             window.location.hash.includes('type=recovery')
 
   return (
     <Routes>
+      {/* Rota de Reset de Senha (SEMPRE pública, sem verificação de auth) */}
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       {/* Rota de Login */}
       <Route 
         path="/login" 
         element={
-          isAuthenticated ? (
+          isAuthenticated && !isResetPasswordUrl ? (
             <Navigate to="/dashboard" replace />
           ) : (
             <Login onLogin={login} />
           )
         } 
       />
-
-      {/* Rota de Reset de Senha (pública) */}
-      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Rotas Protegidas */}
       <Route

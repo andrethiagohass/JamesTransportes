@@ -1,4 +1,5 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
@@ -14,6 +15,16 @@ const Login = ({ onLogin }: LoginProps) => {
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [resetEmailSent, setResetEmailSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const navigate = useNavigate()
+
+  // Detectar se há token de recovery na URL e redirecionar
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('type=recovery') || hash.includes('access_token')) {
+      console.log('🔄 Token de recovery detectado no login, redirecionando para /reset-password')
+      navigate('/reset-password', { replace: true })
+    }
+  }, [navigate])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
