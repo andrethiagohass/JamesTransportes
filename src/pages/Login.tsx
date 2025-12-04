@@ -84,19 +84,13 @@ const Login = ({ onLogin }: LoginProps) => {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-4">
+          <div className="inline-flex items-center justify-center mb-6">
             <img 
               src="/JamesTransportes/HasstreioLogo.png" 
-              alt="Hasstreio Logo" 
-              className="h-20 w-auto"
+              alt="Hasstreio" 
+              className="h-32 w-auto"
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Hasstreio
-          </h1>
-          <p className="text-gray-600">
-            {showForgotPassword ? 'Recuperar Senha' : 'Sistema de Gerenciamento'}
-          </p>
         </div>
 
         {/* Formulário de Recuperação de Senha */}
