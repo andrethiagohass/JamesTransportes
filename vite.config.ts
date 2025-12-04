@@ -20,6 +20,10 @@ export default defineConfig({
         {
           src: 'public/auth-callback.html',
           dest: '.'
+        },
+        {
+          src: 'public/HasstreioLogo.png',
+          dest: '.'
         }
       ]
     })
