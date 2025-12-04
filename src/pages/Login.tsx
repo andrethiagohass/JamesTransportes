@@ -1,15 +1,18 @@
 import { useState, FormEvent } from 'react'
-import { Lock, User } from 'lucide-react'
+import { Lock, Mail } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 interface LoginProps {
-  onLogin: (username: string, password: string) => Promise<boolean>
+  onLogin: (email: string, password: string) => Promise<boolean>
 }
 
 const Login = ({ onLogin }: LoginProps) => {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -17,15 +20,36 @@ const Login = ({ onLogin }: LoginProps) => {
     setLoading(true)
 
     try {
-      const success = await onLogin(username, password)
+      const success = await onLogin(email, password)
       
       if (!success) {
-        setError('Usuário ou senha incorretos')
+        setError('Email ou senha incorretos')
         setPassword('')
       }
     } catch (err) {
       setError('Erro ao conectar. Tente novamente.')
       console.error('Erro no login:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+
+      if (error) throw error
+
+      setResetEmailSent(true)
+      setError('')
+    } catch (err: any) {
+      setError(err.message || 'Erro ao enviar email de recuperação')
     } finally {
       setLoading(false)
     }
@@ -43,12 +67,73 @@ const Login = ({ onLogin }: LoginProps) => {
             JCS Transportes e Logística
           </h1>
           <p className="text-gray-600">
-            Sistema de Gerenciamento
+            {showForgotPassword ? 'Recuperar Senha' : 'Sistema de Gerenciamento'}
           </p>
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Formulário de Recuperação de Senha */}
+        {showForgotPassword ? (
+          <div>
+            {resetEmailSent ? (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+                <p className="text-sm mb-2">✅ Email enviado com sucesso!</p>
+                <p className="text-xs">Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-6">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <p className="text-sm">{error}</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Digite seu email
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="input-field pl-10"
+                      placeholder="seu@email.com"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Enviaremos um link para redefinir sua senha
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-primary py-3 text-lg font-semibold disabled:opacity-50"
+                >
+                  {loading ? 'Enviando...' : 'Enviar Email'}
+                </button>
+              </form>
+            )}
+
+            <button
+              onClick={() => {
+                setShowForgotPassword(false)
+                setResetEmailSent(false)
+                setError('')
+              }}
+              className="w-full mt-4 text-primary-600 hover:text-primary-700 text-sm font-medium"
+            >
+              ← Voltar para o login
+            </button>
+          </div>
+        ) : (
+          /* Formulário de Login */
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* Mensagem de erro */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -56,21 +141,21 @@ const Login = ({ onLogin }: LoginProps) => {
             </div>
           )}
 
-          {/* Campo Usuário */}
+          {/* Campo Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Usuário
+              Email
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
+                <Mail className="h-5 w-5 text-gray-400" />
               </div>
               <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input-field pl-10"
-                placeholder="Digite seu usuário"
+                placeholder="seu@email.com"
                 required
                 autoFocus
               />
@@ -115,7 +200,19 @@ const Login = ({ onLogin }: LoginProps) => {
               'Entrar'
             )}
           </button>
+
+          {/* Link Esqueci minha senha */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+            >
+              Esqueci minha senha
+            </button>
+          </div>
         </form>
+        )}
       </div>
     </div>
   )

@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
-import bcrypt from 'bcryptjs'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface User {
   id: string
-  username: string
+  email: string
   nome: string | null
   empresa: string | null
   logo_url: string | null
@@ -15,8 +15,8 @@ interface User {
 interface AuthContextType {
   isAuthenticated: boolean
   user: User | null
-  login: (username: string, password: string) => Promise<boolean>
-  logout: () => void
+  login: (email: string, password: string) => Promise<boolean>
+  logout: () => Promise<void>
   loading: boolean
 }
 
@@ -27,73 +27,104 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Verificar se já está autenticado ao carregar
+  // Verificar sessão ao carregar
   useEffect(() => {
-    const authToken = localStorage.getItem('james_auth_token')
-    const authExpiry = localStorage.getItem('james_auth_expiry')
-    const userData = localStorage.getItem('james_user_data')
-    
-    if (authToken && authExpiry && userData) {
-      const expiryTime = parseInt(authExpiry)
-      if (Date.now() < expiryTime) {
-        setIsAuthenticated(true)
-        setUser(JSON.parse(userData))
+    checkSession()
+
+    // Listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadUserProfile(session.user)
       } else {
-        // Token expirado
-        localStorage.removeItem('james_auth_token')
-        localStorage.removeItem('james_auth_expiry')
-        localStorage.removeItem('james_username')
-        localStorage.removeItem('james_user_data')
+        setIsAuthenticated(false)
+        setUser(null)
+        setLoading(false)
       }
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
-    setLoading(false)
   }, [])
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const checkSession = async () => {
     try {
-      // Buscar usuário no banco de dados
-      const { data: user, error } = await supabase
-        .from('usuarios')
-        .select('id, username, password_hash, nome, empresa, logo_url, role, tenant_id')
-        .eq('username', username)
-        .eq('ativo', true)
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        await loadUserProfile(session.user)
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error)
+      setLoading(false)
+    }
+  }
+
+  const loadUserProfile = async (authUser: SupabaseUser) => {
+    try {
+      // Buscar perfil do usuário
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', authUser.id)
         .single()
 
-      if (error || !user) {
-        console.error('Usuário não encontrado:', error)
-        return false
+      if (error || !profile) {
+        console.error('Perfil não encontrado:', error)
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
       }
 
-      // Verificar senha usando bcrypt
-      const senhaValida = await bcrypt.compare(password, user.password_hash)
-
-      if (!senhaValida) {
-        console.error('Senha incorreta')
-        return false
+      // Verificar se usuário está ativo
+      if (!profile.ativo) {
+        console.error('Usuário inativo')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
       }
 
-      // Criar objeto de usuário sem o password_hash
+      // Criar objeto de usuário
       const userData: User = {
-        id: user.id,
-        username: user.username,
-        nome: user.nome,
-        empresa: user.empresa,
-        logo_url: user.logo_url,
-        role: user.role,
-        tenant_id: user.tenant_id
+        id: authUser.id,
+        email: authUser.email || '',
+        nome: profile.nome,
+        empresa: profile.empresa,
+        logo_url: profile.logo_url,
+        role: profile.role,
+        tenant_id: profile.tenant_id
       }
 
-      // Autenticação bem-sucedida
       setIsAuthenticated(true)
       setUser(userData)
-      
-      // Salvar token com expiração de 7 dias
-      const expiryTime = Date.now() + (7 * 24 * 60 * 60 * 1000)
-      localStorage.setItem('james_auth_token', 'authenticated')
-      localStorage.setItem('james_auth_expiry', expiryTime.toString())
-      localStorage.setItem('james_username', user.nome || username)
-      localStorage.setItem('james_user_data', JSON.stringify(userData))
-      
+      setLoading(false)
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error)
+      setLoading(false)
+    }
+  }
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      // Autenticar com Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('Erro ao fazer login:', error.message)
+        return false
+      }
+
+      if (!data.user) {
+        console.error('Usuário não encontrado')
+        return false
+      }
+
+      // loadUserProfile será chamado automaticamente pelo onAuthStateChange
       return true
     } catch (error) {
       console.error('Erro ao fazer login:', error)
@@ -101,13 +132,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const logout = () => {
-    setIsAuthenticated(false)
-    setUser(null)
-    localStorage.removeItem('james_auth_token')
-    localStorage.removeItem('james_auth_expiry')
-    localStorage.removeItem('james_username')
-    localStorage.removeItem('james_user_data')
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut()
+      setIsAuthenticated(false)
+      setUser(null)
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error)
+    }
   }
 
   return (

@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2 } from 'lucide-react'
+import { Save, Edit2, Trash2, Weight } from 'lucide-react'
 import { formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import LoadingSkeleton from '../components/LoadingSkeleton'
+import EmptyState from '../components/EmptyState'
 
 interface PrecoKgType {
   id: string
@@ -14,10 +17,12 @@ interface PrecoKgType {
 
 const PrecoKg = () => {
   const { user } = useAuth()
+  const toast = useToast()
   const [precos, setPrecos] = useState<PrecoKgType[]>([])
   const [valor, setValor] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
     if (user) {
@@ -27,6 +32,7 @@ const PrecoKg = () => {
 
   const fetchPrecos = async () => {
     if (!user) return
+    setFetching(true)
 
     const { data, error } = await supabase
       .from('preco_kg')
@@ -36,9 +42,11 @@ const PrecoKg = () => {
 
     if (error) {
       console.error('Erro ao carregar preços:', error)
+      toast.error('Erro ao carregar preços por KG')
     } else {
       setPrecos(data || [])
     }
+    setFetching(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,6 +63,7 @@ const PrecoKg = () => {
           .eq('tenant_id', user.tenant_id)
 
         if (error) throw error
+        toast.success(`Preço atualizado para ${formatCurrency(parseFloat(valor))}/kg`, 'Preço Atualizado')
       } else {
         // Criar novo - Primeiro desativa todos os preços ativos do tenant
         const { error: updateError } = await supabase
@@ -75,6 +84,7 @@ const PrecoKg = () => {
           })
 
         if (insertError) throw insertError
+        toast.success(`Novo preço cadastrado: ${formatCurrency(parseFloat(valor))}/kg`, 'Preço Criado')
       }
 
       setValor('')
@@ -82,7 +92,7 @@ const PrecoKg = () => {
       fetchPrecos()
     } catch (error) {
       console.error('Erro ao salvar:', error)
-      alert('Erro ao salvar preço')
+      toast.error('Erro ao salvar preço. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -94,7 +104,8 @@ const PrecoKg = () => {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return
+    const preco = precos.find(p => p.id === id)
+    if (!confirm(`Tem certeza que deseja excluir o preço de ${preco ? formatCurrency(preco.valor) : '?'}/kg?`)) return
     if (!user) return
 
     const { error } = await supabase
@@ -105,8 +116,9 @@ const PrecoKg = () => {
 
     if (error) {
       console.error('Erro ao excluir:', error)
-      alert('Erro ao excluir')
+      toast.error('Erro ao excluir preço')
     } else {
+      toast.success('Preço excluído com sucesso')
       fetchPrecos()
     }
   }
@@ -122,7 +134,9 @@ const PrecoKg = () => {
 
     if (error) {
       console.error('Erro ao atualizar:', error)
+      toast.error('Erro ao atualizar status')
     } else {
+      toast.success(`Preço ${preco.ativo ? 'desativado' : 'ativado'} com sucesso`)
       fetchPrecos()
     }
   }
@@ -175,8 +189,14 @@ const PrecoKg = () => {
 
       <div className="card">
         <h2 className="text-xl font-semibold mb-4">Preços Cadastrados</h2>
-        {precos.length === 0 ? (
-          <p className="text-gray-500">Nenhum preço cadastrado ainda.</p>
+        {fetching ? (
+          <LoadingSkeleton type="table" rows={3} />
+        ) : precos.length === 0 ? (
+          <EmptyState
+            icon={Weight}
+            title="Nenhum preço configurado"
+            description="Configure o valor por quilograma transportado. Este valor será usado no cálculo automático dos lançamentos."
+          />
         ) : (
           <div className="table-container">
             <table className="w-full">

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Calculator } from 'lucide-react'
+import { Save, Edit2, Trash2, Calculator, TruckIcon } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import LoadingSkeleton from '../components/LoadingSkeleton'
+import EmptyState from '../components/EmptyState'
 
 interface Lancamento {
   id: string
@@ -22,6 +25,7 @@ interface Lancamento {
 
 const Lancamentos = () => {
   const { user } = useAuth()
+  const toast = useToast()
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [data, setData] = useState('')
   const [kmInicial, setKmInicial] = useState('')
@@ -29,6 +33,7 @@ const Lancamentos = () => {
   const [peso, setPeso] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   
   // Valores calculados
   const [kmTotal, setKmTotal] = useState(0)
@@ -51,6 +56,7 @@ const Lancamentos = () => {
 
   const fetchLancamentos = async () => {
     if (!user) return
+    setFetching(true)
 
     const { data, error } = await supabase
       .from('lancamentos')
@@ -60,9 +66,11 @@ const Lancamentos = () => {
 
     if (error) {
       console.error('Erro ao carregar lançamentos:', error)
+      toast.error('Erro ao carregar lançamentos')
     } else {
       setLancamentos(data || [])
     }
+    setFetching(false)
   }
 
   const calcularValores = async () => {
@@ -156,12 +164,14 @@ const Lancamentos = () => {
           .eq('tenant_id', user.tenant_id)
 
         if (error) throw error
+        toast.success(`Lançamento de ${formatDateShortBR(data)} atualizado com sucesso!`, 'Lançamento Atualizado')
       } else {
         const { error } = await supabase
           .from('lancamentos')
           .insert([lancamentoData])
 
         if (error) throw error
+        toast.success(`Lançamento de ${formatDateShortBR(data)} registrado! Total: ${formatCurrency(precoTotal)}`, 'Lançamento Criado')
       }
 
       // Limpar formulário
@@ -173,7 +183,7 @@ const Lancamentos = () => {
       fetchLancamentos()
     } catch (error) {
       console.error('Erro ao salvar:', error)
-      alert('Erro ao salvar lançamento')
+      toast.error('Erro ao salvar lançamento. Verifique os campos e tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -188,7 +198,8 @@ const Lancamentos = () => {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return
+    const lanc = lancamentos.find(l => l.id === id)
+    if (!confirm(`Tem certeza que deseja excluir o lançamento de ${lanc ? formatDateShortBR(lanc.data) : 'esta data'}?`)) return
     if (!user) return
 
     const { error } = await supabase
@@ -199,8 +210,9 @@ const Lancamentos = () => {
 
     if (error) {
       console.error('Erro ao excluir:', error)
-      alert('Erro ao excluir')
+      toast.error('Erro ao excluir lançamento')
     } else {
+      toast.success('Lançamento excluído com sucesso')
       fetchLancamentos()
     }
   }
@@ -327,8 +339,14 @@ const Lancamentos = () => {
 
       <div className="card">
         <h2 className="text-xl font-semibold mb-4">Lançamentos Registrados</h2>
-        {lancamentos.length === 0 ? (
-          <p className="text-gray-500">Nenhum lançamento cadastrado ainda.</p>
+        {fetching ? (
+          <LoadingSkeleton type="table" rows={5} />
+        ) : lancamentos.length === 0 ? (
+          <EmptyState
+            icon={TruckIcon}
+            title="Nenhum lançamento cadastrado"
+            description="Comece registrando sua primeira viagem preenchendo o formulário acima. Os valores serão calculados automaticamente com base nos preços configurados."
+          />
         ) : (
           <div className="table-container">
             <table className="w-full">

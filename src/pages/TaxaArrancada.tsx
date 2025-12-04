@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2 } from 'lucide-react'
+import { Save, Edit2, Trash2, Zap } from 'lucide-react'
 import { formatKm, formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import LoadingSkeleton from '../components/LoadingSkeleton'
+import EmptyState from '../components/EmptyState'
 
 interface TaxaType {
   id: string
@@ -16,12 +19,14 @@ interface TaxaType {
 
 const TaxaArrancada = () => {
   const { user } = useAuth()
+  const toast = useToast()
   const [taxas, setTaxas] = useState<TaxaType[]>([])
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
   const [valor, setValor] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
     if (user) {
@@ -31,6 +36,7 @@ const TaxaArrancada = () => {
 
   const fetchTaxas = async () => {
     if (!user) return
+    setFetching(true)
 
     const { data, error } = await supabase
       .from('taxa_arrancada')
@@ -40,9 +46,11 @@ const TaxaArrancada = () => {
 
     if (error) {
       console.error('Erro ao carregar taxas:', error)
+      toast.error('Erro ao carregar taxas de arrancada')
     } else {
       setTaxas(data || [])
     }
+    setFetching(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,12 +74,14 @@ const TaxaArrancada = () => {
           .eq('tenant_id', user.tenant_id)
 
         if (error) throw error
+        toast.success(`Taxa atualizada: ${formatKm(parseInt(kmInicial))}-${formatKm(parseInt(kmFinal))}km = ${formatCurrency(parseFloat(valor))}`, 'Taxa Atualizada')
       } else {
         const { error } = await supabase
           .from('taxa_arrancada')
           .insert({ ...taxaData, ativo: true })
 
         if (error) throw error
+        toast.success(`Nova taxa criada: ${formatKm(parseInt(kmInicial))}-${formatKm(parseInt(kmFinal))}km = ${formatCurrency(parseFloat(valor))}`, 'Taxa Criada')
       }
 
       setKmInicial('')
@@ -81,7 +91,7 @@ const TaxaArrancada = () => {
       fetchTaxas()
     } catch (error) {
       console.error('Erro ao salvar:', error)
-      alert('Erro ao salvar taxa')
+      toast.error('Erro ao salvar taxa. Verifique se as faixas de KM não se sobrepõem.')
     } finally {
       setLoading(false)
     }
@@ -95,7 +105,8 @@ const TaxaArrancada = () => {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return
+    const taxa = taxas.find(t => t.id === id)
+    if (!confirm(`Tem certeza que deseja excluir a taxa de ${taxa ? `${formatKm(taxa.km_inicial)}-${formatKm(taxa.km_final)}km` : 'esta faixa'}?`)) return
     if (!user) return
 
     const { error } = await supabase
@@ -106,8 +117,9 @@ const TaxaArrancada = () => {
 
     if (error) {
       console.error('Erro ao excluir:', error)
-      alert('Erro ao excluir')
+      toast.error('Erro ao excluir taxa')
     } else {
+      toast.success('Taxa excluída com sucesso')
       fetchTaxas()
     }
   }
@@ -123,7 +135,9 @@ const TaxaArrancada = () => {
 
     if (error) {
       console.error('Erro ao atualizar:', error)
+      toast.error('Erro ao atualizar status')
     } else {
+      toast.success(`Taxa ${taxa.ativo ? 'desativada' : 'ativada'} com sucesso`)
       fetchTaxas()
     }
   }
@@ -202,8 +216,14 @@ const TaxaArrancada = () => {
 
       <div className="card">
         <h2 className="text-xl font-semibold mb-4">Taxas Cadastradas</h2>
-        {taxas.length === 0 ? (
-          <p className="text-gray-500">Nenhuma taxa cadastrada ainda.</p>
+        {fetching ? (
+          <LoadingSkeleton type="table" rows={4} />
+        ) : taxas.length === 0 ? (
+          <EmptyState
+            icon={Zap}
+            title="Nenhuma taxa configurada"
+            description="Configure as taxas de arrancada por faixa de distância. Estas taxas serão somadas ao valor total das viagens."
+          />
         ) : (
           <div className="table-container">
             <table className="w-full">

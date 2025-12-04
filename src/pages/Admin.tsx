@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Users, Building2, Key } from 'lucide-react'
+import { Save, Edit2, Trash2, Users, Building2, Key, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import bcrypt from 'bcryptjs'
+import { useToast } from '../contexts/ToastContext'
 
 interface Usuario {
   id: string
-  username: string
+  email: string
   nome: string | null
   empresa: string | null
   role: string
@@ -17,8 +17,9 @@ interface Usuario {
 
 const Admin = () => {
   const { user } = useAuth()
+  const toast = useToast()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [nome, setNome] = useState('')
   const [empresa, setEmpresa] = useState('')
@@ -36,22 +37,25 @@ const Admin = () => {
   }, [isSuperAdmin])
 
   const fetchUsuarios = async () => {
+    // Busca perfis de usuário (user_profiles) - agora com email direto da tabela
     const { data, error } = await supabase
-      .from('usuarios')
-      .select('id, username, nome, empresa, role, tenant_id, ativo, created_at')
+      .from('user_profiles')
+      .select('id, email, nome, empresa, role, tenant_id, ativo, created_at')
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Erro ao carregar usuários:', error)
-    } else {
-      setUsuarios(data || [])
+      toast.error('Erro ao carregar usuários')
+      return
     }
+
+    setUsuarios(data || [])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isSuperAdmin) {
-      alert('Acesso negado!')
+      toast.error('Acesso negado!')
       return
     }
     setLoading(true)
@@ -66,59 +70,103 @@ const Admin = () => {
           updated_at: new Date().toISOString()
         }
 
-        // Só atualiza senha se foi informada
-        if (senha) {
-          const passwordHash = await bcrypt.hash(senha, 10)
-          updateData.password_hash = passwordHash
-        }
-
-        const { error } = await supabase
-          .from('usuarios')
+        // Atualizar perfil
+        const { error: profileError } = await supabase
+          .from('user_profiles')
           .update(updateData)
           .eq('id', editingId)
 
-        if (error) throw error
+        if (profileError) throw profileError
+
+        // Se senha foi informada, mostrar aviso que precisa resetar via email
+        if (senha) {
+          toast.warning('⚠️ Para alterar senha, o usuário deve usar "Esqueci minha senha" no login')
+        }
+        
+        toast.success('Usuário atualizado com sucesso!', 'Sucesso')
       } else {
-        // Criar novo usuário
+        // Criar novo usuário no Supabase Auth
         if (!senha) {
-          alert('Senha é obrigatória para novos usuários')
+          toast.warning('Senha é obrigatória para novos usuários')
           setLoading(false)
           return
         }
 
-        const passwordHash = await bcrypt.hash(senha, 10)
+        if (!email) {
+          toast.warning('Email é obrigatório para novos usuários')
+          setLoading(false)
+          return
+        }
+
+        // Salvar sessão atual do super admin
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
+
+        // 1. Criar usuário usando signUp (funciona no cliente)
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: email,
+          password: senha,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              nome: nome
+            }
+          }
+        })
+
+        if (authError) throw authError
+        if (!authData.user) throw new Error('Erro ao criar usuário')
+
+        // 2. Criar perfil em user_profiles
         const newTenantId = crypto.randomUUID()
 
-        const { error } = await supabase
-          .from('usuarios')
+        // Temporariamente fazer logout para criar o perfil como novo usuário
+        const { error: profileError } = await supabase
+          .from('user_profiles')
           .insert({
-            username,
-            password_hash: passwordHash,
-            nome,
-            empresa,
-            role,
+            id: authData.user.id,
             tenant_id: newTenantId,
+            role: role,
+            nome: nome,
+            empresa: empresa,
+            email: email,
             ativo: true
           })
 
-        if (error) throw error
+        if (profileError) {
+          console.error('Erro ao criar perfil:', profileError)
+          throw profileError
+        }
+
+        // 3. Restaurar sessão do super admin
+        if (currentSession) {
+          await supabase.auth.setSession({
+            access_token: currentSession.access_token,
+            refresh_token: currentSession.refresh_token
+          })
+        }
+        
+        toast.success(
+          `Usuário ${email} criado! Senha temporária enviada por email.`, 
+          'Novo Usuário Criado'
+        )
       }
 
       // Limpar formulário
-      setUsername('')
+      setEmail('')
       setSenha('')
       setNome('')
       setEmpresa('')
       setRole('user')
       setEditingId(null)
       fetchUsuarios()
-      alert('Usuário salvo com sucesso!')
     } catch (error: any) {
       console.error('Erro ao salvar usuário:', error)
       if (error.code === '23505') {
-        alert('Este username já existe!')
+        toast.error('Este email já existe! Escolha outro.')
+      } else if (error.message?.includes('email')) {
+        toast.error('Email inválido ou já cadastrado.')
       } else {
-        alert('Erro ao salvar usuário')
+        toast.error('Erro ao salvar usuário: ' + (error.message || 'Tente novamente'))
       }
     } finally {
       setLoading(false)
@@ -127,7 +175,7 @@ const Admin = () => {
 
   const handleEdit = (usuario: Usuario) => {
     setEditingId(usuario.id)
-    setUsername(usuario.username)
+    setEmail(usuario.email)
     setNome(usuario.nome || '')
     setEmpresa(usuario.empresa || '')
     setRole(usuario.role as 'user' | 'admin')
@@ -135,37 +183,45 @@ const Admin = () => {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return
+    if (!confirm('Tem certeza que deseja excluir este usuário?\n\nAVISO: O usuário ainda existirá no Supabase Auth, mas não terá acesso ao sistema.')) return
 
-    const { error } = await supabase
-      .from('usuarios')
-      .delete()
-      .eq('id', id)
+    try {
+      // Deletar apenas o perfil (RLS impede acesso ao sistema)
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', id)
 
-    if (error) {
-      console.error('Erro ao excluir:', error)
-      alert('Erro ao excluir usuário')
-    } else {
+      if (error) throw error
+
+      toast.success('Usuário removido do sistema com sucesso')
       fetchUsuarios()
+    } catch (error) {
+      console.error('Erro ao excluir:', error)
+      toast.error('Erro ao excluir usuário')
     }
   }
 
   const toggleAtivo = async (usuario: Usuario) => {
     const { error } = await supabase
-      .from('usuarios')
+      .from('user_profiles')
       .update({ ativo: !usuario.ativo })
       .eq('id', usuario.id)
 
     if (error) {
       console.error('Erro ao atualizar:', error)
+      toast.error('Erro ao atualizar status')
     } else {
+      toast.success(
+        `Usuário ${usuario.ativo ? 'desativado' : 'ativado'} com sucesso`
+      )
       fetchUsuarios()
     }
   }
 
   const cancelEdit = () => {
     setEditingId(null)
-    setUsername('')
+    setEmail('')
     setSenha('')
     setNome('')
     setEmpresa('')
@@ -209,18 +265,21 @@ const Admin = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">Username (Login)</label>
+              <label className="label flex items-center gap-2">
+                <Mail size={16} />
+                Email (Login)
+              </label>
               <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input-field"
-                placeholder="usuario.login"
+                placeholder="usuario@email.com"
                 required
                 disabled={!!editingId}
               />
               {editingId && (
-                <p className="text-xs text-gray-500 mt-1">Username não pode ser alterado</p>
+                <p className="text-xs text-gray-500 mt-1">Email não pode ser alterado</p>
               )}
             </div>
             <div>
@@ -312,7 +371,7 @@ const Admin = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
-                    Username
+                    Email
                   </th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">
                     Nome
@@ -335,7 +394,7 @@ const Admin = () => {
                 {usuarios.map((usuario) => (
                   <tr key={usuario.id} className="hover:bg-gray-50">
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium">
-                      {usuario.username}
+                      {usuario.email}
                       {usuario.role === 'super_admin' && (
                         <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
                           Super Admin
@@ -418,6 +477,10 @@ const Admin = () => {
           <li>• Super Admin (você) pode ver e gerenciar todos os usuários</li>
           <li>• Ao criar um usuário, um novo tenant_id é gerado automaticamente</li>
           <li>• O Super Admin não pode ser desativado ou excluído pela interface</li>
+          <li>• ✨ <strong>Novidade:</strong> Usuários agora são criados via Supabase Auth (seguro!)</li>
+          <li>• 🔒 Senhas são gerenciadas pelo Supabase (criptografia robusta)</li>
+          <li>• 📧 <strong>Importante:</strong> Usuário receberá email de confirmação ao ser criado</li>
+          <li>• 🔑 Para alterar senha, usuário deve usar "Esqueci minha senha" no login</li>
         </ul>
       </div>
     </div>

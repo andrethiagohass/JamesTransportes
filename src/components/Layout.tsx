@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import WelcomeModal from './WelcomeModal'
 
 interface LayoutProps {
   children: ReactNode
@@ -47,8 +48,27 @@ const Layout = ({ children }: LayoutProps) => {
     navigate('/login')
   }
 
-  const username = user?.nome || user?.username || localStorage.getItem('james_username') || 'Usuário'
+  const username = user?.nome || user?.email || 'Usuário'
   const empresaNome = user?.empresa || 'Hasstreio'
+  const userRole = user?.role || 'user'
+
+  const getRoleBadge = () => {
+    if (userRole === 'super_admin') {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold bg-purple-500 text-white rounded-full">
+          Super Admin
+        </span>
+      )
+    }
+    if (userRole === 'admin') {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold bg-blue-500 text-white rounded-full">
+          Admin
+        </span>
+      )
+    }
+    return null
+  }
 
   const isActive = (path: string) => location.pathname === path
 
@@ -58,8 +78,9 @@ const Layout = ({ children }: LayoutProps) => {
       <header className="bg-primary-700 text-white shadow-lg">
         <div className="container-app">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">🚚 {empresaNome}</h1>
+              {getRoleBadge()}
             </div>
             
             {/* User info and logout - Desktop */}
@@ -169,6 +190,9 @@ const Layout = ({ children }: LayoutProps) => {
           {children}
         </main>
       </div>
+      
+      {/* Welcome Modal */}
+      <WelcomeModal />
     </div>
   )
 }
