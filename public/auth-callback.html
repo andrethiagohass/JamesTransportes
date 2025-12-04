@@ -32,37 +32,41 @@
       100% { transform: rotate(360deg); }
     }
   </style>
+  
+  <!-- SCRIPT INLINE - EXECUTA IMEDIATAMENTE, SEM ESPERAR NADA -->
+  <script>
+    // CAPTURAR IMEDIATAMENTE - ANTES DE QUALQUER COISA
+    (function() {
+      var hash = window.location.hash;
+      
+      console.log('🔗 AUTH CALLBACK - Hash capturado:', hash ? hash.substring(0, 50) + '...' : '(vazio)');
+      
+      if (hash && hash.length > 1) {
+        // SALVAR no localStorage
+        if (hash.indexOf('access_token') !== -1) {
+          try {
+            localStorage.setItem('supabase_recovery_hash', hash);
+            console.log('💾 Hash salvo no localStorage');
+          } catch(e) {
+            console.error('Erro ao salvar no localStorage:', e);
+          }
+        }
+        
+        // Redirecionar IMEDIATAMENTE
+        var newUrl = window.location.origin + '/JamesTransportes/reset-password' + hash;
+        console.log('✅ Redirecionando para:', newUrl);
+        window.location.replace(newUrl);
+      } else {
+        console.log('❌ Hash vazio - redirecionando para reset-password (tentará recuperar do localStorage)');
+        window.location.replace(window.location.origin + '/JamesTransportes/reset-password');
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="container">
     <div class="spinner"></div>
-    <p>Redirecionando para reset de senha...</p>
+    <p>Redirecionando...</p>
   </div>
-  
-  <script>
-    // CAPTURAR IMEDIATAMENTE - sem setTimeout
-    const hash = window.location.hash;
-    
-    console.log('🔗 AUTH CALLBACK INICIADO');
-    console.log('  - URL completa:', window.location.href);
-    console.log('  - hash capturado:', hash);
-    
-    if (hash && hash.length > 1) {
-      // SALVAR no localStorage como backup
-      if (hash.includes('access_token')) {
-        localStorage.setItem('supabase_recovery_hash', hash);
-        console.log('💾 Hash salvo no localStorage');
-      }
-      
-      // Redirecionar COM o hash usando replace (não cria nova entrada no histórico)
-      console.log('✅ Redirecionando IMEDIATAMENTE para reset-password com hash');
-      const newUrl = window.location.origin + '/JamesTransportes/reset-password' + hash;
-      console.log('  - Nova URL:', newUrl);
-      window.location.replace(newUrl);
-    } else {
-      console.log('❌ Hash vazio, redirecionando para reset-password (tentará recuperar do localStorage)');
-      window.location.replace(window.location.origin + '/JamesTransportes/reset-password');
-    }
-  </script>
 </body>
 </html>
