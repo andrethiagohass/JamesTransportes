@@ -38,12 +38,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('  - hash:', window.location.hash) // Debug
       console.log('  - session:', session ? 'exists' : 'null') // Debug
       
-      // Ignorar eventos de autenticação na página de reset de senha
+      // Na página de reset, apenas marcar como não autenticado mas não redirecionar
       const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
                                    window.location.hash.includes('type=recovery')
       
       if (isResetPasswordPage) {
-        console.log('⚠️ Página de reset de senha detectada - ignorando evento de auth')
+        console.log('⚠️ Página de reset de senha detectada - permitindo acesso')
+        setIsAuthenticated(false)
+        setUser(null)
         setLoading(false)
         return
       }

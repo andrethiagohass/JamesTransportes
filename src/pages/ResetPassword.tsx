@@ -43,6 +43,12 @@ export default function ResetPassword() {
     const checkToken = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       
+      console.log('🔑 Verificando token de recuperação:', {
+        hasSession: !!session,
+        type: type,
+        hash: location.hash
+      })
+      
       // Verificar se há sessão E se é do tipo recovery
       if (session && type === 'recovery') {
         console.log('✅ Token de recuperação válido')
@@ -51,10 +57,18 @@ export default function ResetPassword() {
         console.log('⚠️ Sessão normal detectada, mas não é recovery')
         setIsValidToken(true) // Permitir mesmo assim (pode ser token na URL)
       } else {
-        const message = 'Link de recuperação inválido ou expirado'
-        setErrorMessage(message)
-        toast.error(message, 'Token Inválido')
-        setTimeout(() => navigate('/login'), 5000)
+        // Se não tem sessão mas tem hash, esperar um pouco
+        if (location.hash && location.hash.includes('access_token')) {
+          console.log('⏳ Hash detectado, aguardando processamento do Supabase...')
+          setTimeout(() => {
+            window.location.reload() // Recarregar para processar o hash
+          }, 1000)
+        } else {
+          const message = 'Link de recuperação inválido ou expirado'
+          setErrorMessage(message)
+          toast.error(message, 'Token Inválido')
+          // NÃO redirecionar automaticamente - deixar usuário ver a mensagem
+        }
       }
     }
 
