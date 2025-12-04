@@ -16,6 +16,10 @@ export default defineConfig({
         {
           src: 'public/404.html',
           dest: '.'
+        },
+        {
+          src: 'public/auth-callback.html',
+          dest: '.'
         }
       ]
     })
