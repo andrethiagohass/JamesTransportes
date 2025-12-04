@@ -52,10 +52,10 @@ const Login = ({ onLogin }: LoginProps) => {
     setLoading(true)
 
     try {
-      // Usar a URL completa com basepath correto
+      // Usar página intermediária que captura o hash
       const redirectUrl = window.location.origin.includes('github.io')
-        ? 'https://andrethiagohass.github.io/JamesTransportes/reset-password'
-        : `${window.location.origin}/reset-password`
+        ? 'https://andrethiagohass.github.io/JamesTransportes/auth-callback.html'
+        : `${window.location.origin}/auth-callback.html`
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
