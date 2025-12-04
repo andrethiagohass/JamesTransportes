@@ -10,6 +10,7 @@ import TaxaArrancada from './pages/TaxaArrancada'
 import Lancamentos from './pages/Lancamentos'
 import Relatorios from './pages/Relatorios'
 import Admin from './pages/Admin'
+import ResetPassword from './pages/ResetPassword'
 
 // Componente para proteger rotas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -39,6 +40,9 @@ const AppRoutes = () => {
           )
         } 
       />
+
+      {/* Rota de Reset de Senha (pública) */}
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Rotas Protegidas */}
       <Route
