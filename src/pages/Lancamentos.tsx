@@ -11,6 +11,7 @@ import EmptyState from '../components/EmptyState'
 interface Lancamento {
   id: string
   data: string
+  carga: string | null
   km_inicial: number
   km_final: number
   km_total: number
@@ -28,6 +29,7 @@ const Lancamentos = () => {
   const toast = useToast()
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [data, setData] = useState('')
+  const [carga, setCarga] = useState('')
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
   const [peso, setPeso] = useState('')
@@ -145,6 +147,7 @@ const Lancamentos = () => {
     try {
       const lancamentoData = {
         data,
+        carga: carga || null,
         km_inicial: parseFloat(kmInicial),
         km_final: parseFloat(kmFinal),
         km_total: kmTotal,
@@ -176,6 +179,7 @@ const Lancamentos = () => {
 
       // Limpar formulário
       setData('')
+      setCarga('')
       setKmInicial('')
       setKmFinal('')
       setPeso('')
@@ -192,6 +196,7 @@ const Lancamentos = () => {
   const handleEdit = (lancamento: Lancamento) => {
     setEditingId(lancamento.id)
     setData(lancamento.data)
+    setCarga(lancamento.carga || '')
     setKmInicial(lancamento.km_inicial.toString())
     setKmFinal(lancamento.km_final.toString())
     setPeso(lancamento.peso.toString())
@@ -226,7 +231,7 @@ const Lancamentos = () => {
           {editingId ? 'Editar Lançamento' : 'Novo Lançamento'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="label">Data</label>
               <input
@@ -235,6 +240,17 @@ const Lancamentos = () => {
                 onChange={(e) => setData(e.target.value)}
                 className="input-field"
                 required
+              />
+            </div>
+            <div>
+              <label className="label">Carga</label>
+              <input
+                type="text"
+                maxLength={5}
+                value={carga}
+                onChange={(e) => setCarga(e.target.value)}
+                className="input-field"
+                placeholder="Ex: A123"
               />
             </div>
             <div>
@@ -324,6 +340,7 @@ const Lancamentos = () => {
                 onClick={() => {
                   setEditingId(null)
                   setData('')
+                  setCarga('')
                   setKmInicial('')
                   setKmFinal('')
                   setPeso('')
@@ -353,6 +370,7 @@ const Lancamentos = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Data</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Carga</th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Peso</th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Total</th>
@@ -365,6 +383,15 @@ const Lancamentos = () => {
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
                       <span className="sm:hidden">{formatDateShortBR(lanc.data)}</span>
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell">
+                      {lanc.carga ? (
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                          {lanc.carga}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <div>

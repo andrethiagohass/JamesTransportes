@@ -97,6 +97,7 @@ export interface Database {
         Row: {
           id: string
           data: string
+          carga: string | null
           km_inicial: number
           km_final: number
           km_total: number
@@ -112,6 +113,7 @@ export interface Database {
         Insert: {
           id?: string
           data: string
+          carga?: string | null
           km_inicial: number
           km_final: number
           km_total: number
@@ -127,6 +129,7 @@ export interface Database {
         Update: {
           id?: string
           data?: string
+          carga?: string | null
           km_inicial?: number
           km_final?: number
           km_total?: number

@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext'
 interface Lancamento {
   id: string
   data: string
+  carga: string | null
   km_total: number
   peso: number
   preco_total: number
@@ -213,6 +214,7 @@ const Relatorios = () => {
     
     const tableData = lancamentos.map((lanc) => [
       formatDateBR(lanc.data),
+      lanc.carga || '-',
       `${formatKm(lanc.km_total)} km`,
       `${formatPeso(lanc.peso)} kg`,
       formatCurrency(lanc.preco_total)
@@ -220,7 +222,7 @@ const Relatorios = () => {
     
     autoTable(doc, {
       startY: 130,
-      head: [['Data', 'KM Total', 'Peso', 'Valor']],
+      head: [['Data', 'Carga', 'KM Total', 'Peso', 'Valor']],
       body: tableData,
       theme: 'striped',
       margin: { left: 14, right: 14 },
@@ -242,9 +244,10 @@ const Relatorios = () => {
       },
       columnStyles: {
         0: { halign: 'center' },
-        1: { halign: 'center' },
+        1: { halign: 'center', fontStyle: 'bold', textColor: [59, 130, 246] },
         2: { halign: 'center' },
-        3: { halign: 'center', fontStyle: 'bold', textColor: [22, 163, 74] }
+        3: { halign: 'center' },
+        4: { halign: 'center', fontStyle: 'bold', textColor: [22, 163, 74] }
       }
     })
     
@@ -400,6 +403,7 @@ const Relatorios = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Data</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Carga</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">Peso</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Valor</th>
@@ -411,6 +415,15 @@ const Relatorios = () => {
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                           <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
                           <span className="sm:hidden">{formatDateShortBR(lanc.data)}</span>
+                        </td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell">
+                          {lanc.carga ? (
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                              {lanc.carga}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{formatKm(lanc.km_total)} km</td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{formatPeso(lanc.peso)} kg</td>
