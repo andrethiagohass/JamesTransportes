@@ -27,14 +27,36 @@ dist-ssr
 .env
 .env.local
 .env.production
+!.env.example
 
-# Arquivos com senhas e credenciais
-SUPABASE_AUTH_SETUP.md
-AUTENTICACAO.md
-SENHA_PRIVADA.md
-*_SETUP.md
-gerar-hash.*
-*password*
-*senha*
-*PRIVADA*
+# ============================================
+# ARQUIVOS SENSÍVEIS - NÃO COMMITAR
+# ============================================
+
+# Documentação interna (contém credenciais/senhas)
+*.md
+!README.md
+!LICENSE.md
+
+# Arquivos SQL (contém dados reais)
+*.sql
+
+# Scripts de geração de senhas/hashes
+generate-*.js
+gerar-*.js
+*.hash.js
+
+# Relatórios de segurança privados
+SECURITY_*.md
+*_PRIVATE.md
+*_INTERNAL.md
+
+# Arquivos de backup
+backup-*.sql
+restore-*.sql
+
+# Scripts de restart (podem conter informações sensíveis)
+*.bat
+*.ps1
+*.sh
 

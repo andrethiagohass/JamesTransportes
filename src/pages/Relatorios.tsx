@@ -8,6 +8,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Lancamento {
   id: string
@@ -15,6 +16,7 @@ interface Lancamento {
   km_total: number
   peso: number
   preco_total: number
+  tenant_id: string
 }
 
 interface MesData {
@@ -26,6 +28,8 @@ interface MesData {
 }
 
 const Relatorios = () => {
+  const { user } = useAuth()
+  
   // Criar datas padrão sem timezone
   const now = new Date()
   const year = now.getFullYear()
@@ -41,15 +45,20 @@ const Relatorios = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetchRelatorio()
-  }, [dataInicial, dataFinal])
+    if (user) {
+      fetchRelatorio()
+    }
+  }, [dataInicial, dataFinal, user])
 
   const fetchRelatorio = async () => {
+    if (!user) return
+
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('lancamentos')
         .select('*')
+        .eq('tenant_id', user.tenant_id)
         .gte('data', dataInicial)
         .lte('data', dataFinal)
         .order('data', { ascending: true })
@@ -96,7 +105,7 @@ const Relatorios = () => {
   }
 
   const exportarPDF = () => {
-    if (!stats || !lancamentos.length) {
+    if (!stats || !lancamentos.length || !user) {
       alert('Não há dados para exportar')
       return
     }
@@ -104,14 +113,14 @@ const Relatorios = () => {
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
     
-    // Header - Título
+    // Header - Título com nome da empresa
     doc.setFillColor(14, 165, 233) // primary-500
     doc.rect(0, 0, pageWidth, 35, 'F')
     
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
-    doc.text('JCS TRANSPORTES E LOGISTICA', pageWidth / 2, 15, { align: 'center' })
+    doc.text((user.empresa || 'HASSTREIO').toUpperCase(), pageWidth / 2, 15, { align: 'center' })
     
     doc.setFontSize(14)
     doc.setFont('helvetica', 'normal')

@@ -2,28 +2,36 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2 } from 'lucide-react'
 import { formatCurrency } from '../utils/formatUtils'
+import { useAuth } from '../contexts/AuthContext'
 
 interface PrecoKgType {
   id: string
   valor: number
   ativo: boolean
+  tenant_id: string
   created_at: string
 }
 
 const PrecoKg = () => {
+  const { user } = useAuth()
   const [precos, setPrecos] = useState<PrecoKgType[]>([])
   const [valor, setValor] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetchPrecos()
-  }, [])
+    if (user) {
+      fetchPrecos()
+    }
+  }, [user])
 
   const fetchPrecos = async () => {
+    if (!user) return
+
     const { data, error } = await supabase
       .from('preco_kg')
       .select('*')
+      .eq('tenant_id', user.tenant_id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -35,6 +43,7 @@ const PrecoKg = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
     setLoading(true)
 
     try {
@@ -43,21 +52,27 @@ const PrecoKg = () => {
           .from('preco_kg')
           .update({ valor: parseFloat(valor), updated_at: new Date().toISOString() })
           .eq('id', editingId)
+          .eq('tenant_id', user.tenant_id)
 
         if (error) throw error
       } else {
-        // Criar novo - Primeiro desativa todos os preços ativos
+        // Criar novo - Primeiro desativa todos os preços ativos do tenant
         const { error: updateError } = await supabase
           .from('preco_kg')
           .update({ ativo: false })
           .eq('ativo', true)
+          .eq('tenant_id', user.tenant_id)
 
         if (updateError) throw updateError
 
         // Depois insere o novo preço como ativo
         const { error: insertError } = await supabase
           .from('preco_kg')
-          .insert({ valor: parseFloat(valor), ativo: true })
+          .insert({ 
+            valor: parseFloat(valor), 
+            ativo: true,
+            tenant_id: user.tenant_id
+          })
 
         if (insertError) throw insertError
       }
@@ -80,11 +95,13 @@ const PrecoKg = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir?')) return
+    if (!user) return
 
     const { error } = await supabase
       .from('preco_kg')
       .delete()
       .eq('id', id)
+      .eq('tenant_id', user.tenant_id)
 
     if (error) {
       console.error('Erro ao excluir:', error)
@@ -95,10 +112,13 @@ const PrecoKg = () => {
   }
 
   const toggleAtivo = async (preco: PrecoKgType) => {
+    if (!user) return
+
     const { error } = await supabase
       .from('preco_kg')
       .update({ ativo: !preco.ativo })
       .eq('id', preco.id)
+      .eq('tenant_id', user.tenant_id)
 
     if (error) {
       console.error('Erro ao atualizar:', error)

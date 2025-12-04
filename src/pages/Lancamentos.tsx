@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2, Calculator } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Lancamento {
   id: string
@@ -15,10 +16,12 @@ interface Lancamento {
   valor_peso: number
   taxa_arrancada: number
   preco_total: number
+  tenant_id: string
   created_at: string
 }
 
 const Lancamentos = () => {
+  const { user } = useAuth()
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [data, setData] = useState('')
   const [kmInicial, setKmInicial] = useState('')
@@ -35,17 +38,24 @@ const Lancamentos = () => {
   const [taxaArrancada, setTaxaArrancada] = useState(0)
 
   useEffect(() => {
-    fetchLancamentos()
-  }, [])
+    if (user) {
+      fetchLancamentos()
+    }
+  }, [user])
 
   useEffect(() => {
-    calcularValores()
-  }, [kmInicial, kmFinal, peso])
+    if (user) {
+      calcularValores()
+    }
+  }, [kmInicial, kmFinal, peso, user])
 
   const fetchLancamentos = async () => {
+    if (!user) return
+
     const { data, error } = await supabase
       .from('lancamentos')
       .select('*')
+      .eq('tenant_id', user.tenant_id)
       .order('data', { ascending: false })
 
     if (error) {
@@ -56,7 +66,7 @@ const Lancamentos = () => {
   }
 
   const calcularValores = async () => {
-    if (!kmInicial || !kmFinal || !peso) {
+    if (!user || !kmInicial || !kmFinal || !peso) {
       setKmTotal(0)
       setPrecoTotal(0)
       return
@@ -71,29 +81,32 @@ const Lancamentos = () => {
     setKmTotal(totalKm)
 
     try {
-      // Buscar preço por KM ativo
+      // Buscar preço por KM ativo do tenant
       const { data: precoKmData } = await supabase
         .from('preco_km')
         .select('valor')
         .eq('ativo', true)
+        .eq('tenant_id', user.tenant_id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      // Buscar preço por KG ativo
+      // Buscar preço por KG ativo do tenant
       const { data: precoKgData } = await supabase
         .from('preco_kg')
         .select('valor')
         .eq('ativo', true)
+        .eq('tenant_id', user.tenant_id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      // Buscar taxa de arrancada baseada no KM total
+      // Buscar taxa de arrancada baseada no KM total do tenant
       const { data: taxaData } = await supabase
         .from('taxa_arrancada')
         .select('valor')
         .eq('ativo', true)
+        .eq('tenant_id', user.tenant_id)
         .lte('km_inicial', totalKm)
         .gte('km_final', totalKm)
         .limit(1)
@@ -118,6 +131,7 @@ const Lancamentos = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
     setLoading(true)
 
     try {
@@ -131,6 +145,7 @@ const Lancamentos = () => {
         valor_peso: valorPeso,
         taxa_arrancada: taxaArrancada,
         preco_total: precoTotal,
+        tenant_id: user.tenant_id
       }
 
       if (editingId) {
@@ -138,6 +153,7 @@ const Lancamentos = () => {
           .from('lancamentos')
           .update({ ...lancamentoData, updated_at: new Date().toISOString() })
           .eq('id', editingId)
+          .eq('tenant_id', user.tenant_id)
 
         if (error) throw error
       } else {
@@ -173,11 +189,13 @@ const Lancamentos = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir?')) return
+    if (!user) return
 
     const { error } = await supabase
       .from('lancamentos')
       .delete()
       .eq('id', id)
+      .eq('tenant_id', user.tenant_id)
 
     if (error) {
       console.error('Erro ao excluir:', error)

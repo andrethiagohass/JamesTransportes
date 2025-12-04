@@ -14,6 +14,7 @@ export interface Database {
           id: string
           valor: number
           ativo: boolean
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -21,6 +22,7 @@ export interface Database {
           id?: string
           valor: number
           ativo?: boolean
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -28,6 +30,7 @@ export interface Database {
           id?: string
           valor?: number
           ativo?: boolean
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -37,6 +40,7 @@ export interface Database {
           id: string
           valor: number
           ativo: boolean
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -44,6 +48,7 @@ export interface Database {
           id?: string
           valor: number
           ativo?: boolean
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -51,6 +56,7 @@ export interface Database {
           id?: string
           valor?: number
           ativo?: boolean
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -62,6 +68,7 @@ export interface Database {
           km_final: number
           valor: number
           ativo: boolean
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -71,6 +78,7 @@ export interface Database {
           km_final: number
           valor: number
           ativo?: boolean
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -80,6 +88,7 @@ export interface Database {
           km_final?: number
           valor?: number
           ativo?: boolean
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -96,6 +105,7 @@ export interface Database {
           valor_peso: number
           taxa_arrancada: number
           preco_total: number
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -110,6 +120,7 @@ export interface Database {
           valor_peso: number
           taxa_arrancada: number
           preco_total: number
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -124,6 +135,7 @@ export interface Database {
           valor_peso?: number
           taxa_arrancada?: number
           preco_total?: number
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -135,6 +147,10 @@ export interface Database {
           password_hash: string
           nome: string | null
           ativo: boolean
+          empresa: string | null
+          logo_url: string | null
+          role: string
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -144,6 +160,10 @@ export interface Database {
           password_hash: string
           nome?: string | null
           ativo?: boolean
+          empresa?: string | null
+          logo_url?: string | null
+          role?: string
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -153,6 +173,10 @@ export interface Database {
           password_hash?: string
           nome?: string | null
           ativo?: boolean
+          empresa?: string | null
+          logo_url?: string | null
+          role?: string
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }

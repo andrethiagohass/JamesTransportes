@@ -4,6 +4,7 @@ import { BarChart3, TrendingUp, DollarSign, Package } from 'lucide-react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Stats {
   totalLancamentos: number
@@ -13,6 +14,7 @@ interface Stats {
 }
 
 const Dashboard = () => {
+  const { user } = useAuth()
   const [stats, setStats] = useState<Stats>({
     totalLancamentos: 0,
     totalKm: 0,
@@ -22,10 +24,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    if (user) {
+      fetchStats()
+    }
+  }, [user])
 
   const fetchStats = async () => {
+    if (!user) return
+
     try {
       const now = new Date()
       const start = startOfMonth(now)
@@ -34,6 +40,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('lancamentos')
         .select('*')
+        .eq('tenant_id', user.tenant_id)
         .gte('data', format(start, 'yyyy-MM-dd'))
         .lte('data', format(end, 'yyyy-MM-dd'))
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, Edit2, Trash2 } from 'lucide-react'
 import { formatKm, formatCurrency } from '../utils/formatUtils'
+import { useAuth } from '../contexts/AuthContext'
 
 interface TaxaType {
   id: string
@@ -9,10 +10,12 @@ interface TaxaType {
   km_final: number
   valor: number
   ativo: boolean
+  tenant_id: string
   created_at: string
 }
 
 const TaxaArrancada = () => {
+  const { user } = useAuth()
   const [taxas, setTaxas] = useState<TaxaType[]>([])
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
@@ -21,13 +24,18 @@ const TaxaArrancada = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetchTaxas()
-  }, [])
+    if (user) {
+      fetchTaxas()
+    }
+  }, [user])
 
   const fetchTaxas = async () => {
+    if (!user) return
+
     const { data, error } = await supabase
       .from('taxa_arrancada')
       .select('*')
+      .eq('tenant_id', user.tenant_id)
       .order('km_inicial', { ascending: true })
 
     if (error) {
@@ -39,6 +47,7 @@ const TaxaArrancada = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
     setLoading(true)
 
     try {
@@ -46,6 +55,7 @@ const TaxaArrancada = () => {
         km_inicial: parseInt(kmInicial),
         km_final: parseInt(kmFinal),
         valor: parseFloat(valor),
+        tenant_id: user.tenant_id
       }
 
       if (editingId) {
@@ -53,6 +63,7 @@ const TaxaArrancada = () => {
           .from('taxa_arrancada')
           .update({ ...taxaData, updated_at: new Date().toISOString() })
           .eq('id', editingId)
+          .eq('tenant_id', user.tenant_id)
 
         if (error) throw error
       } else {
@@ -85,11 +96,13 @@ const TaxaArrancada = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir?')) return
+    if (!user) return
 
     const { error } = await supabase
       .from('taxa_arrancada')
       .delete()
       .eq('id', id)
+      .eq('tenant_id', user.tenant_id)
 
     if (error) {
       console.error('Erro ao excluir:', error)
@@ -100,10 +113,13 @@ const TaxaArrancada = () => {
   }
 
   const toggleAtivo = async (taxa: TaxaType) => {
+    if (!user) return
+
     const { error } = await supabase
       .from('taxa_arrancada')
       .update({ ativo: !taxa.ativo })
       .eq('id', taxa.id)
+      .eq('tenant_id', user.tenant_id)
 
     if (error) {
       console.error('Erro ao atualizar:', error)

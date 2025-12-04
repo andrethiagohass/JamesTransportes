@@ -8,6 +8,7 @@ import PrecoKg from './pages/PrecoKg'
 import TaxaArrancada from './pages/TaxaArrancada'
 import Lancamentos from './pages/Lancamentos'
 import Relatorios from './pages/Relatorios'
+import Admin from './pages/Admin'
 
 // Componente para proteger rotas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -53,6 +54,7 @@ const AppRoutes = () => {
                 <Route path="/taxa-arrancada" element={<TaxaArrancada />} />
                 <Route path="/lancamentos" element={<Lancamentos />} />
                 <Route path="/relatorios" element={<Relatorios />} />
+                <Route path="/admin" element={<Admin />} />
                 {/* Rota 404 - redireciona para dashboard */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>

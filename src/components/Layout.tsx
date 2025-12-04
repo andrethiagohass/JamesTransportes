@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   LogOut,
-  User
+  User,
+  Users
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -22,7 +23,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const navigation = [
@@ -34,12 +35,20 @@ const Layout = ({ children }: LayoutProps) => {
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
   ]
 
+  // Adicionar menu Admin apenas para super_admin
+  const adminNavigation = user?.role === 'super_admin' 
+    ? [{ name: 'Administração', href: '/admin', icon: Users }]
+    : []
+
+  const allNavigation = [...navigation, ...adminNavigation]
+
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
-  const username = localStorage.getItem('james_username') || 'Usuário'
+  const username = user?.nome || user?.username || localStorage.getItem('james_username') || 'Usuário'
+  const empresaNome = user?.empresa || 'Hasstreio'
 
   const isActive = (path: string) => location.pathname === path
 
@@ -50,7 +59,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="container-app">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold">🚚 JCS Transportes e Logística</h1>
+              <h1 className="text-2xl font-bold">🚚 {empresaNome}</h1>
             </div>
             
             {/* User info and logout - Desktop */}
@@ -83,7 +92,7 @@ const Layout = ({ children }: LayoutProps) => {
         {/* Sidebar - Desktop */}
         <aside className="hidden md:block w-64 bg-white shadow-md min-h-[calc(100vh-4rem)]">
           <nav className="p-4 space-y-2">
-            {navigation.map((item) => {
+            {allNavigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
@@ -131,7 +140,7 @@ const Layout = ({ children }: LayoutProps) => {
                 </div>
 
                 <nav className="space-y-2">
-                  {navigation.map((item) => {
+                  {allNavigation.map((item) => {
                     const Icon = item.icon
                     return (
                       <Link
