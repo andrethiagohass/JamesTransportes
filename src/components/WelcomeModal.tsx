@@ -29,9 +29,9 @@ const WelcomeModal = () => {
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-in">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-slide-in">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-8 rounded-t-2xl relative">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-8 relative flex-shrink-0">
           <button
             onClick={handleClose}
             className="absolute top-4 right-4 text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
@@ -51,7 +51,7 @@ const WelcomeModal = () => {
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-8 overflow-y-auto flex-1">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Olá, {user.nome || user.email || 'Usuário'}! 👋
