@@ -292,6 +292,31 @@ Deseja realmente continuar?`
     }
   }
 
+  const enviarResetSenha = async (usuario: Usuario) => {
+    try {
+      const redirectUrl = window.location.origin.includes('github.io')
+        ? 'https://andrethiagohass.github.io/JamesTransportes/auth-callback.html'
+        : `${window.location.origin}/auth-callback.html`
+
+      const { error } = await supabase.auth.resetPasswordForEmail(usuario.email, {
+        redirectTo: redirectUrl
+      })
+
+      if (error) throw error
+
+      toast.success(
+        `Link de reset de senha enviado para ${usuario.email}. O link expira em 1 hora.`,
+        'Email Enviado'
+      )
+    } catch (error: any) {
+      console.error('Erro ao enviar reset de senha:', error)
+      toast.error(
+        error.message || 'Erro ao enviar email de recuperação',
+        'Erro ao Enviar Email'
+      )
+    }
+  }
+
   const toggleAtivo = async (usuario: Usuario) => {
     const { error } = await supabase
       .from('user_profiles')
@@ -526,6 +551,13 @@ Deseja realmente continuar?`
                         {usuario.role !== 'super_admin' && (
                           <>
                             <button
+                              onClick={() => enviarResetSenha(usuario)}
+                              className="text-orange-600 hover:text-orange-800"
+                              title="Enviar email de reset de senha"
+                            >
+                              <Key size={16} />
+                            </button>
+                            <button
                               onClick={() => handleEdit(usuario)}
                               className="text-blue-600 hover:text-blue-800"
                               title="Editar"
@@ -571,6 +603,7 @@ Deseja realmente continuar?`
           <li>• 🔒 Senhas são gerenciadas pelo Supabase (criptografia robusta)</li>
           <li>• 📧 <strong>Importante:</strong> Usuário receberá email de confirmação ao ser criado</li>
           <li>• 🔑 Para alterar senha, usuário deve usar "Esqueci minha senha" no login</li>
+          <li>• 🔐 <strong className="text-orange-700">Reset de Senha:</strong> Clique no ícone de chave (🔑) ao lado do usuário para enviar email de recuperação. O link expira em 1 hora.</li>
           <li className="pt-2 border-t border-blue-200">
             • 🗑️ <strong className="text-red-700">EXCLUSÃO PERMANENTE:</strong> Ao excluir um usuário, 
             TODOS os dados do tenant são removidos (lançamentos, configurações, etc). 
