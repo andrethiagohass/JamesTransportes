@@ -40,17 +40,31 @@
   </div>
   
   <script>
+    // Log TUDO para debug
+    console.log('🔗 AUTH CALLBACK INICIADO');
+    console.log('  - URL completa:', window.location.href);
+    console.log('  - pathname:', window.location.pathname);
+    console.log('  - search:', window.location.search);
+    console.log('  - hash:', window.location.hash);
+    
     // Capturar o hash da URL (onde vem o access_token)
     const hash = window.location.hash;
-    console.log('🔗 Auth callback - hash:', hash);
     
-    // Redirecionar para a aplicação React com o hash preservado
-    if (hash) {
-      window.location.href = '/JamesTransportes/reset-password' + hash;
-    } else {
-      // Se não há hash, ir para login
-      window.location.href = '/JamesTransportes/login';
-    }
+    // Aguardar um pouco para garantir que o hash foi processado
+    setTimeout(() => {
+      console.log('⏳ Após timeout - hash:', window.location.hash);
+      
+      const finalHash = window.location.hash;
+      
+      if (finalHash && finalHash.length > 1) {
+        console.log('✅ Hash encontrado, redirecionando para reset-password');
+        window.location.href = '/JamesTransportes/reset-password' + finalHash;
+      } else {
+        console.log('❌ Nenhum hash encontrado, redirecionando para login');
+        console.log('   Isso significa que o Supabase não enviou o token no hash');
+        window.location.href = '/JamesTransportes/login';
+      }
+    }, 500);
   </script>
 </body>
 </html>
