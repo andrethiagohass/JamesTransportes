@@ -80,25 +80,26 @@ function App() {
   // Isso evita que o hash seja perdido
   if (typeof window !== 'undefined') {
     const hash = window.location.hash
+    const pathname = window.location.pathname
     const isRecoveryToken = hash.includes('type=recovery') || 
                            (hash.includes('access_token') && hash.includes('type='))
-    const isNotOnResetPage = !window.location.pathname.includes('/reset-password')
+    const isNotOnResetPage = !pathname.includes('/reset-password')
     
-    if (isRecoveryToken && isNotOnResetPage) {
+    // IMPORTANTE: Só redirecionar se não estivermos JÁ na página de reset
+    // E se o pathname ainda não tiver /reset-password
+    if (isRecoveryToken && isNotOnResetPage && !hash.includes('#/reset-password')) {
       console.log('🚨 INTERCEPTANDO: Token de recovery detectado, redirecionando...')
-      console.log('  - pathname atual:', window.location.pathname)
-      console.log('  - hash:', hash)
+      console.log('  - pathname atual:', pathname)
+      console.log('  - hash:', hash.substring(0, 100) + '...') // Truncar para não logar token completo
       
-      // Redirecionar preservando o hash
-      window.location.href = `${window.location.origin}/JamesTransportes/reset-password${hash}`
+      // Extrair apenas o hash de autenticação (remover possíveis duplicações)
+      const cleanHash = hash.split('#/reset-password')[0] // Pegar só a primeira parte
       
-      // Retornar um loading enquanto redireciona
-      return <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecionando para reset de senha...</p>
-        </div>
-      </div>
+      // Redirecionar uma ÚNICA vez usando replace para não adicionar ao histórico
+      window.location.replace(`${window.location.origin}/JamesTransportes/reset-password${cleanHash}`)
+      
+      // Retornar null para não renderizar nada durante o redirect
+      return null
     }
   }
 
