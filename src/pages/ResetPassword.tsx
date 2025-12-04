@@ -22,6 +22,7 @@ export default function ResetPassword() {
     const error = hashParams.get('error')
     const errorDescription = hashParams.get('error_description')
     const errorCode = hashParams.get('error_code')
+    const type = hashParams.get('type')
 
     if (error) {
       let message = 'Link de recuperação inválido ou expirado'
@@ -38,12 +39,17 @@ export default function ResetPassword() {
       return
     }
 
-    // Verificar se há um token de recuperação válido na URL
+    // Verificar se é um link de recuperação de senha
     const checkToken = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       
-      if (session) {
+      // Verificar se há sessão E se é do tipo recovery
+      if (session && type === 'recovery') {
+        console.log('✅ Token de recuperação válido')
         setIsValidToken(true)
+      } else if (session) {
+        console.log('⚠️ Sessão normal detectada, mas não é recovery')
+        setIsValidToken(true) // Permitir mesmo assim (pode ser token na URL)
       } else {
         const message = 'Link de recuperação inválido ou expirado'
         setErrorMessage(message)
