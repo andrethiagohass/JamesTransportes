@@ -7,28 +7,49 @@
   
   <!-- SCRIPT NO TOPO DO HEAD - PRIMEIRA COISA A EXECUTAR -->
   <script>
-    // CAPTURA O HASH ANTES DE QUALQUER COISA - ATÉ ANTES DO CSS
+    // CAPTURA O HASH OU CODE (PKCE) ANTES DE QUALQUER COISA
     (function() {
-      // Tentar múltiplas formas de capturar o hash
-      var hash = window.location.hash || document.location.hash || '';
-      var href = window.location.href || document.location.href || '';
+      var hash = window.location.hash || '';
+      var search = window.location.search || '';
+      var href = window.location.href || '';
       
-      // Se não tem hash na variável, extrair da href
-      if (!hash && href.indexOf('#') !== -1) {
-        hash = '#' + href.split('#')[1];
+      // Extrair code do query param (PKCE)
+      var code = '';
+      if (search.indexOf('code=') !== -1) {
+        code = search.split('code=')[1];
+        if (code.indexOf('&') !== -1) {
+          code = code.split('&')[0];
+        }
       }
       
       console.log('🔗 AUTH CALLBACK EXECUTANDO');
-      console.log('  - Hash via window.location.hash:', window.location.hash);
-      console.log('  - Hash via document.location.hash:', document.location.hash);
+      console.log('  - Hash:', hash || '(vazio)');
+      console.log('  - Query params:', search || '(vazio)');
+      console.log('  - Code (PKCE):', code || '(vazio)');
       console.log('  - href completa:', href);
-      console.log('  - Hash extraído:', hash ? hash.substring(0, 80) + '...' : '(VAZIO)');
       
-      // Se tem hash, processar IMEDIATAMENTE
+      // PKCE: Se tem code, redirecionar COM o search params
+      if (code) {
+        console.log('✅ CODE PKCE ENCONTRADO!');
+        
+        try {
+          sessionStorage.setItem('supabase_pkce_code', code);
+          console.log('💾 Code salvo em sessionStorage');
+        } catch(e) {
+          console.error('❌ Erro ao salvar:', e);
+        }
+        
+        // Redirecionar para reset-password COM os query params
+        var targetUrl = window.location.origin + '/JamesTransportes/reset-password' + search;
+        console.log('🚀 Redirecionando para:', targetUrl);
+        window.location.replace(targetUrl);
+        return;
+      }
+      
+      // Implicit Flow: Se tem hash
       if (hash && hash.length > 1) {
         console.log('✅ HASH ENCONTRADO!');
         
-        // Salvar em MÚLTIPLOS lugares para garantir
         try {
           localStorage.setItem('supabase_recovery_hash', hash);
           sessionStorage.setItem('supabase_recovery_hash', hash);
@@ -37,27 +58,29 @@
           console.error('❌ Erro ao salvar:', e);
         }
         
-        // Redirecionar COM o hash
         var targetUrl = window.location.origin + '/JamesTransportes/reset-password' + hash;
         console.log('🚀 Redirecionando para:', targetUrl);
-        
-        // Usar location.replace para evitar histórico
         window.location.replace(targetUrl);
-        
+        return;
+      }
+      
+      // Nenhum token encontrado
+      console.log('⚠️ Nenhum token encontrado');
+      console.log('  - Tentando recuperar do storage...');
+      
+      var savedHash = localStorage.getItem('supabase_recovery_hash') || 
+                     sessionStorage.getItem('supabase_recovery_hash');
+      var savedCode = sessionStorage.getItem('supabase_pkce_code');
+      
+      if (savedHash) {
+        console.log('📦 Hash recuperado do storage!');
+        window.location.replace(window.location.origin + '/JamesTransportes/reset-password' + savedHash);
+      } else if (savedCode) {
+        console.log('📦 Code recuperado do storage!');
+        window.location.replace(window.location.origin + '/JamesTransportes/reset-password?code=' + savedCode);
       } else {
-        console.log('⚠️ Hash VAZIO ou inexistente');
-        console.log('  - Tentando recuperar do storage...');
-        
-        var savedHash = localStorage.getItem('supabase_recovery_hash') || 
-                       sessionStorage.getItem('supabase_recovery_hash');
-        
-        if (savedHash) {
-          console.log('📦 Hash recuperado do storage!');
-          window.location.replace(window.location.origin + '/JamesTransportes/reset-password' + savedHash);
-        } else {
-          console.log('❌ Nenhum hash em storage, indo para reset-password sem hash');
-          window.location.replace(window.location.origin + '/JamesTransportes/reset-password?from=callback');
-        }
+        console.log('❌ Nenhum token em storage, indo para reset-password');
+        window.location.replace(window.location.origin + '/JamesTransportes/reset-password?from=callback');
       }
     })();
   </script>
