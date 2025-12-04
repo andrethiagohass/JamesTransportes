@@ -32,7 +32,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkSession()
 
     // Listener para mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event) // Debug
+      
+      if (event === 'SIGNED_IN') {
+        console.log('Usuário logado, carregando perfil...')
+      }
+      
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('Token atualizado')
+      }
+      
       if (session?.user) {
         loadUserProfile(session.user)
       } else {
