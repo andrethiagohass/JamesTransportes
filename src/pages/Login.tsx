@@ -20,9 +20,16 @@ const Login = ({ onLogin }: LoginProps) => {
   // Detectar se há token de recovery na URL e redirecionar
   useEffect(() => {
     const hash = window.location.hash
+    console.log('🔍 Login - Verificando hash:', hash)
+    
     if (hash.includes('type=recovery') || hash.includes('access_token')) {
-      console.log('🔄 Token de recovery detectado no login, redirecionando para /reset-password')
-      navigate('/reset-password', { replace: true })
+      console.log('🔄 Token de recovery detectado no login!')
+      console.log('  - Salvando no localStorage')
+      localStorage.setItem('supabase_recovery_hash', hash)
+      console.log('  - Redirecionando para /reset-password')
+      
+      // Redirecionar COM o hash
+      window.location.replace('/JamesTransportes/reset-password' + hash)
     }
   }, [navigate])
 
