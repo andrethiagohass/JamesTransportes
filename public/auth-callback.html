@@ -40,6 +40,7 @@
       var hash = window.location.hash;
       
       console.log('🔗 AUTH CALLBACK - Hash capturado:', hash ? hash.substring(0, 50) + '...' : '(vazio)');
+      console.log('🔗 URL completa:', window.location.href);
       
       if (hash && hash.length > 1) {
         // SALVAR no localStorage
@@ -58,7 +59,7 @@
         window.location.replace(newUrl);
       } else {
         console.log('❌ Hash vazio - redirecionando para reset-password (tentará recuperar do localStorage)');
-        window.location.replace(window.location.origin + '/JamesTransportes/reset-password');
+        window.location.replace(window.location.origin + '/JamesTransportes/reset-password?from=callback');
       }
     })();
   </script>
