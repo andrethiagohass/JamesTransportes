@@ -40,31 +40,29 @@
   </div>
   
   <script>
-    // Log TUDO para debug
-    console.log('🔗 AUTH CALLBACK INICIADO');
-    console.log('  - URL completa:', window.location.href);
-    console.log('  - pathname:', window.location.pathname);
-    console.log('  - search:', window.location.search);
-    console.log('  - hash:', window.location.hash);
-    
-    // Capturar o hash da URL (onde vem o access_token)
+    // CAPTURAR IMEDIATAMENTE - sem setTimeout
     const hash = window.location.hash;
     
-    // Aguardar um pouco para garantir que o hash foi processado
-    setTimeout(() => {
-      console.log('⏳ Após timeout - hash:', window.location.hash);
-      
-      const finalHash = window.location.hash;
-      
-      if (finalHash && finalHash.length > 1) {
-        console.log('✅ Hash encontrado, redirecionando para reset-password');
-        window.location.href = '/JamesTransportes/reset-password' + finalHash;
-      } else {
-        console.log('❌ Nenhum hash encontrado, redirecionando para login');
-        console.log('   Isso significa que o Supabase não enviou o token no hash');
-        window.location.href = '/JamesTransportes/login';
+    console.log('🔗 AUTH CALLBACK INICIADO');
+    console.log('  - URL completa:', window.location.href);
+    console.log('  - hash capturado:', hash);
+    
+    if (hash && hash.length > 1) {
+      // SALVAR no localStorage como backup
+      if (hash.includes('access_token')) {
+        localStorage.setItem('supabase_recovery_hash', hash);
+        console.log('💾 Hash salvo no localStorage');
       }
-    }, 500);
+      
+      // Redirecionar COM o hash usando replace (não cria nova entrada no histórico)
+      console.log('✅ Redirecionando IMEDIATAMENTE para reset-password com hash');
+      const newUrl = window.location.origin + '/JamesTransportes/reset-password' + hash;
+      console.log('  - Nova URL:', newUrl);
+      window.location.replace(newUrl);
+    } else {
+      console.log('❌ Hash vazio, redirecionando para reset-password (tentará recuperar do localStorage)');
+      window.location.replace(window.location.origin + '/JamesTransportes/reset-password');
+    }
   </script>
 </body>
 </html>

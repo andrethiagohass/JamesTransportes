@@ -17,8 +17,23 @@ export default function ResetPassword() {
   const toast = useToast()
 
   useEffect(() => {
+    // Tentar recuperar hash do localStorage se não estiver na URL
+    let currentHash = location.hash;
+    
+    if (!currentHash || currentHash.length <= 1) {
+      const savedHash = localStorage.getItem('supabase_recovery_hash');
+      if (savedHash) {
+        console.log('🔄 Recuperando hash do localStorage:', savedHash);
+        currentHash = savedHash;
+        // Limpar do localStorage após usar
+        localStorage.removeItem('supabase_recovery_hash');
+        // Atualizar a URL com o hash
+        window.history.replaceState(null, '', window.location.pathname + savedHash);
+      }
+    }
+    
     // Verificar se há erro na URL (link expirado, etc)
-    const hashParams = new URLSearchParams(location.hash.substring(1))
+    const hashParams = new URLSearchParams(currentHash.substring(1))
     const error = hashParams.get('error')
     const errorDescription = hashParams.get('error_description')
     const errorCode = hashParams.get('error_code')
