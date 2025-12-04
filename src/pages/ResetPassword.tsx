@@ -21,31 +21,21 @@ export default function ResetPassword() {
     const searchParams = new URLSearchParams(location.search);
     const pkceCode = searchParams.get('code');
     
-    console.log('🔍 ResetPassword - Iniciando verificação');
-    console.log('  - PKCE code:', pkceCode || '(não)');
-    console.log('  - Hash:', location.hash || '(não)');
-    console.log('  - Search:', location.search || '(não)');
-    
     // Se tem PKCE code, o Supabase vai processar automaticamente
     if (pkceCode) {
-      console.log('✅ PKCE code detectado - aguardando Supabase processar...');
       setIsValidToken(true);
       
       // Verificar se sessão foi criada após alguns instantes
       setTimeout(async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('🔍 Verificando sessão após PKCE:', !!session);
         
         if (session) {
-          console.log('✅ Sessão criada com sucesso via PKCE');
           setIsValidToken(true);
         } else {
-          console.log('⚠️ Aguardando mais um pouco...');
           // Tentar mais uma vez após 2 segundos
           setTimeout(async () => {
             const { data: { session: session2 } } = await supabase.auth.getSession();
             if (session2) {
-              console.log('✅ Sessão criada (segunda tentativa)');
               setIsValidToken(true);
             } else {
               setErrorMessage('Erro ao processar link de recuperação');
@@ -63,7 +53,6 @@ export default function ResetPassword() {
     if (!currentHash || currentHash.length <= 1) {
       const savedHash = localStorage.getItem('supabase_recovery_hash');
       if (savedHash) {
-        console.log('🔄 Recuperando hash do localStorage:', savedHash);
         currentHash = savedHash;
         // Limpar do localStorage após usar
         localStorage.removeItem('supabase_recovery_hash');
@@ -98,23 +87,14 @@ export default function ResetPassword() {
     const checkToken = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       
-      console.log('🔑 Verificando token de recuperação:', {
-        hasSession: !!session,
-        type: type,
-        hash: location.hash
-      })
-      
       // Verificar se há sessão E se é do tipo recovery
       if (session && type === 'recovery') {
-        console.log('✅ Token de recuperação válido')
         setIsValidToken(true)
       } else if (session) {
-        console.log('⚠️ Sessão normal detectada, mas não é recovery')
         setIsValidToken(true) // Permitir mesmo assim (pode ser token na URL)
       } else {
         // Se não tem sessão mas tem hash, esperar um pouco
         if (location.hash && location.hash.includes('access_token')) {
-          console.log('⏳ Hash detectado, aguardando processamento do Supabase...')
           setTimeout(() => {
             window.location.reload() // Recarregar para processar o hash
           }, 1000)

@@ -32,30 +32,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkSession()
 
     // Listener para mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔔 Auth event:', event) // Debug
-      console.log('  - pathname:', window.location.pathname) // Debug
-      console.log('  - hash:', window.location.hash) // Debug
-      console.log('  - session:', session ? 'exists' : 'null') // Debug
-      
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       // Na página de reset, apenas marcar como não autenticado mas não redirecionar
       const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
                                    window.location.hash.includes('type=recovery')
       
       if (isResetPasswordPage) {
-        console.log('⚠️ Página de reset de senha detectada - permitindo acesso')
         setIsAuthenticated(false)
         setUser(null)
         setLoading(false)
         return
-      }
-      
-      if (event === 'SIGNED_IN') {
-        console.log('Usuário logado, carregando perfil...')
-      }
-      
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('Token atualizado')
       }
       
       if (session?.user) {
@@ -78,19 +64,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const isResetPasswordPage = window.location.pathname.includes('/reset-password') || 
                                    window.location.hash.includes('type=recovery')
       
-      console.log('🔍 checkSession chamado')
-      console.log('  - pathname:', window.location.pathname)
-      console.log('  - hash:', window.location.hash)
-      console.log('  - isResetPasswordPage:', isResetPasswordPage)
-      
       if (isResetPasswordPage) {
-        console.log('⚠️ Página de reset - não verificando sessão')
         setLoading(false)
         return
       }
 
       const { data: { session } } = await supabase.auth.getSession()
-      console.log('  - session:', session ? 'exists' : 'null')
       
       if (session?.user) {
         await loadUserProfile(session.user)
