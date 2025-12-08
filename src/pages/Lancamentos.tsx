@@ -11,7 +11,7 @@ import EmptyState from '../components/EmptyState'
 interface Lancamento {
   id: string
   data: string
-  carga: string | null
+  carga: number | null
   km_inicial: number
   km_final: number
   km_total: number
@@ -147,7 +147,7 @@ const Lancamentos = () => {
     try {
       const lancamentoData = {
         data,
-        carga: carga || null,
+        carga: carga ? parseInt(carga) : null,
         km_inicial: parseFloat(kmInicial),
         km_final: parseFloat(kmFinal),
         km_total: kmTotal,
@@ -196,7 +196,7 @@ const Lancamentos = () => {
   const handleEdit = (lancamento: Lancamento) => {
     setEditingId(lancamento.id)
     setData(lancamento.data)
-    setCarga(lancamento.carga || '')
+    setCarga(lancamento.carga ? lancamento.carga.toString() : '')
     setKmInicial(lancamento.km_inicial.toString())
     setKmFinal(lancamento.km_final.toString())
     setPeso(lancamento.peso.toString())
@@ -245,12 +245,18 @@ const Lancamentos = () => {
             <div>
               <label className="label">Carga</label>
               <input
-                type="text"
-                maxLength={10}
+                type="number"
+                min="0"
+                max="999999"
                 value={carga}
-                onChange={(e) => setCarga(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 999999)) {
+                    setCarga(value)
+                  }
+                }}
                 className="input-field"
-                placeholder="Ex: A123"
+                placeholder="Ex: 123456"
               />
             </div>
             <div>

@@ -13,7 +13,7 @@ import { useAuth } from '../contexts/AuthContext'
 interface Lancamento {
   id: string
   data: string
-  carga: string | null
+  carga: number | null
   km_total: number
   peso: number
   preco_total: number
