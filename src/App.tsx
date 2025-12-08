@@ -14,7 +14,19 @@ import ResetPassword from './pages/ResetPassword'
 
 // Componente para proteger rotas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
+  
+  // Aguardar verificação de sessão antes de redirecionar
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -26,10 +38,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Componente principal das rotas
 const AppRoutes = () => {
   const { isAuthenticated, login } = useAuth()
-  
-  // Detectar se é uma URL de reset de senha
-  const isResetPasswordUrl = window.location.pathname.includes('/reset-password') || 
-                             window.location.hash.includes('type=recovery')
 
   return (
     <Routes>
@@ -40,7 +48,7 @@ const AppRoutes = () => {
       <Route 
         path="/login" 
         element={
-          isAuthenticated && !isResetPasswordUrl ? (
+          isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
             <Login onLogin={login} />
