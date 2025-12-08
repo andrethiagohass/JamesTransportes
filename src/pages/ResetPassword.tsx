@@ -17,98 +17,87 @@ export default function ResetPassword() {
   const toast = useToast()
 
   useEffect(() => {
-    // Verificar se há code PKCE na URL
-    const searchParams = new URLSearchParams(location.search);
-    const pkceCode = searchParams.get('code');
-    
-    // Se tem PKCE code, o Supabase vai processar automaticamente
-    if (pkceCode) {
-      setIsValidToken(true);
+    const checkRecoveryAccess = async () => {
+      // 1. Verificar se há code PKCE na URL (método moderno)
+      const searchParams = new URLSearchParams(location.search);
+      const pkceCode = searchParams.get('code');
       
-      // Verificar se sessão foi criada após alguns instantes
-      setTimeout(async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+      if (pkceCode) {
+        // Tem PKCE code - permitir acesso imediatamente
+        setIsValidToken(true);
         
-        if (session) {
-          setIsValidToken(true);
-        } else {
-          // Tentar mais uma vez após 2 segundos
-          setTimeout(async () => {
-            const { data: { session: session2 } } = await supabase.auth.getSession();
-            if (session2) {
-              setIsValidToken(true);
-            } else {
-              setErrorMessage('Erro ao processar link de recuperação');
-              toast.error('Link inválido ou expirado', 'Erro');
-            }
-          }, 2000);
+        // Dar tempo para o Supabase processar o code e criar a sessão
+        // A sessão será criada automaticamente em background
+        setTimeout(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            // Sessão criada com sucesso
+            setIsValidToken(true);
+          }
+        }, 2000);
+        return;
+      }
+      
+      // 2. Verificar se há hash de recovery na URL (método antigo - Implicit Flow)
+      let currentHash = location.hash;
+      
+      // Tentar recuperar do localStorage se não estiver na URL
+      if (!currentHash || currentHash.length <= 1) {
+        const savedHash = localStorage.getItem('supabase_recovery_hash');
+        if (savedHash) {
+          currentHash = savedHash;
+          localStorage.removeItem('supabase_recovery_hash');
+          window.history.replaceState(null, '', window.location.pathname + savedHash);
         }
-      }, 1000);
-      return;
-    }
-    
-    // Tentar recuperar hash do localStorage se não estiver na URL
-    let currentHash = location.hash;
-    
-    if (!currentHash || currentHash.length <= 1) {
-      const savedHash = localStorage.getItem('supabase_recovery_hash');
-      if (savedHash) {
-        currentHash = savedHash;
-        // Limpar do localStorage após usar
-        localStorage.removeItem('supabase_recovery_hash');
-        // Atualizar a URL com o hash
-        window.history.replaceState(null, '', window.location.pathname + savedHash);
-      }
-    }
-    
-    // Verificar se há erro na URL (link expirado, etc)
-    const hashParams = new URLSearchParams(currentHash.substring(1))
-    const error = hashParams.get('error')
-    const errorDescription = hashParams.get('error_description')
-    const errorCode = hashParams.get('error_code')
-    const type = hashParams.get('type')
-
-    if (error) {
-      let message = 'Link de recuperação inválido ou expirado'
-      
-      if (errorCode === 'otp_expired') {
-        message = 'O link de recuperação expirou. Por favor, solicite um novo link.'
-      } else if (errorDescription) {
-        message = errorDescription.replace(/\+/g, ' ')
       }
       
-      setErrorMessage(message)
-      setIsValidToken(false)
-      toast.error(message, 'Link Inválido')
-      return
-    }
+      // Verificar se há erro no hash
+      const hashParams = new URLSearchParams(currentHash.substring(1))
+      const error = hashParams.get('error')
+      const errorDescription = hashParams.get('error_description')
+      const errorCode = hashParams.get('error_code')
+      const type = hashParams.get('type')
 
-    // Verificar se é um link de recuperação de senha (Implicit Flow)
-    const checkToken = async () => {
+      if (error) {
+        let message = 'Link de recuperação inválido ou expirado'
+        
+        if (errorCode === 'otp_expired') {
+          message = 'O link de recuperação expirou. Por favor, solicite um novo link.'
+        } else if (errorDescription) {
+          message = errorDescription.replace(/\+/g, ' ')
+        }
+        
+        setErrorMessage(message)
+        setIsValidToken(false)
+        toast.error(message, 'Link Inválido')
+        return
+      }
+
+      // 3. Verificar se há sessão ativa (pode ser de recovery ou normal)
       const { data: { session } } = await supabase.auth.getSession()
       
-      // Verificar se há sessão E se é do tipo recovery
       if (session && type === 'recovery') {
+        // Sessão de recovery válida
         setIsValidToken(true)
       } else if (session) {
-        setIsValidToken(true) // Permitir mesmo assim (pode ser token na URL)
+        // Tem sessão, permitir trocar senha
+        setIsValidToken(true)
+      } else if (location.hash && location.hash.includes('access_token')) {
+        // Tem token no hash, aguardar processamento
+        setIsValidToken(true)
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } else {
-        // Se não tem sessão mas tem hash, esperar um pouco
-        if (location.hash && location.hash.includes('access_token')) {
-          setTimeout(() => {
-            window.location.reload() // Recarregar para processar o hash
-          }, 1000)
-        } else {
-          const message = 'Link de recuperação inválido ou expirado'
-          setErrorMessage(message)
-          toast.error(message, 'Token Inválido')
-          // NÃO redirecionar automaticamente - deixar usuário ver a mensagem
-        }
+        // Sem PKCE code, sem hash, sem sessão - acesso inválido
+        setErrorMessage('Link de recuperação inválido ou expirado')
+        setIsValidToken(false)
+        toast.error('Link de recuperação inválido. Solicite um novo link.', 'Acesso Negado')
       }
     }
 
-    checkToken()
-  }, [navigate, toast, location.hash])
+    checkRecoveryAccess()
+  }, [navigate, toast, location.hash, location.search])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
