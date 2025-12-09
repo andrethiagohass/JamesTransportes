@@ -24,6 +24,10 @@ export default defineConfig({
         {
           src: 'public/HasstreioLogo.png',
           dest: '.'
+        },
+        {
+          src: 'public/favicon.png',
+          dest: '.'
         }
       ]
     })
