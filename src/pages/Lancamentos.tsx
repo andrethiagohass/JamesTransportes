@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Calculator, TruckIcon } from 'lucide-react'
+import { Save, Edit2, Trash2, Calculator, TruckIcon, Filter } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import LoadingSkeleton from '../components/LoadingSkeleton'
 import EmptyState from '../components/EmptyState'
+import { subMonths, subYears, isAfter, parseISO } from 'date-fns'
 
 interface Lancamento {
   id: string
@@ -24,10 +25,13 @@ interface Lancamento {
   created_at: string
 }
 
+type PeriodFilter = '1month' | '3months' | '6months' | '1year' | 'all'
+
 const Lancamentos = () => {
   const { user } = useAuth()
   const toast = useToast()
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('1month')
   const [data, setData] = useState('')
   const [carga, setCarga] = useState('')
   const [kmInicial, setKmInicial] = useState('')
@@ -55,6 +59,36 @@ const Lancamentos = () => {
       calcularValores()
     }
   }, [kmInicial, kmFinal, peso, user])
+
+  // Filtrar lançamentos por período
+  const filteredLancamentos = useMemo(() => {
+    if (periodFilter === 'all') return lancamentos
+
+    const now = new Date()
+    let cutoffDate: Date
+
+    switch (periodFilter) {
+      case '1month':
+        cutoffDate = subMonths(now, 1)
+        break
+      case '3months':
+        cutoffDate = subMonths(now, 3)
+        break
+      case '6months':
+        cutoffDate = subMonths(now, 6)
+        break
+      case '1year':
+        cutoffDate = subYears(now, 1)
+        break
+      default:
+        return lancamentos
+    }
+
+    return lancamentos.filter(lanc => {
+      const lancDate = parseISO(lanc.data)
+      return isAfter(lancDate, cutoffDate)
+    })
+  }, [lancamentos, periodFilter])
 
   const fetchLancamentos = async () => {
     if (!user) return
@@ -361,14 +395,35 @@ const Lancamentos = () => {
       </div>
 
       <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Lançamentos Registrados</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+          <h2 className="text-xl font-semibold">Lançamentos Registrados</h2>
+          
+          {/* Filtro de Período */}
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-gray-600" />
+            <select
+              value={periodFilter}
+              onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
+              className="input-field w-auto min-w-[180px]"
+            >
+              <option value="1month">Último mês</option>
+              <option value="3months">Últimos 3 meses</option>
+              <option value="6months">Últimos 6 meses</option>
+              <option value="1year">Último ano</option>
+              <option value="all">Todos os períodos</option>
+            </select>
+          </div>
+        </div>
+
         {fetching ? (
           <LoadingSkeleton type="table" rows={5} />
-        ) : lancamentos.length === 0 ? (
+        ) : filteredLancamentos.length === 0 ? (
           <EmptyState
             icon={TruckIcon}
-            title="Nenhum lançamento cadastrado"
-            description="Comece registrando sua primeira viagem preenchendo o formulário acima. Os valores serão calculados automaticamente com base nos preços configurados."
+            title={lancamentos.length === 0 ? "Nenhum lançamento cadastrado" : "Nenhum lançamento neste período"}
+            description={lancamentos.length === 0 
+              ? "Comece registrando sua primeira viagem preenchendo o formulário acima. Os valores serão calculados automaticamente com base nos preços configurados."
+              : "Não há lançamentos para o período selecionado. Tente selecionar um período maior."}
           />
         ) : (
           <div className="table-container">
@@ -384,7 +439,7 @@ const Lancamentos = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {lancamentos.map((lanc) => (
+                {filteredLancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
