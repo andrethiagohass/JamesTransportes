@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Calculator, TruckIcon, Filter } from 'lucide-react'
+import { Save, Edit2, Trash2, Calculator, TruckIcon, Filter, X } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
@@ -37,10 +37,15 @@ const Lancamentos = () => {
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
   const [peso, setPeso] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   
+  // Cache de preços (carregados uma vez)
+  const [cachedPrecoKm, setCachedPrecoKm] = useState<number>(0)
+  const [cachedPrecoKg, setCachedPrecoKg] = useState<number>(0)
+  const [cachedTaxas, setCachedTaxas] = useState<{ km_inicial: number; km_final: number; valor: number }[]>([])
+  const [pricingLoaded, setPricingLoaded] = useState(false)
+
   // Valores calculados
   const [kmTotal, setKmTotal] = useState(0)
   const [precoTotal, setPrecoTotal] = useState(0)
@@ -48,17 +53,51 @@ const Lancamentos = () => {
   const [valorPeso, setValorPeso] = useState(0)
   const [taxaArrancada, setTaxaArrancada] = useState(0)
 
-  useEffect(() => {
-    if (user) {
-      fetchLancamentos()
-    }
-  }, [user])
+  // Estado da modal de edição
+  const [editModal, setEditModal] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editData, setEditData] = useState('')
+  const [editCarga, setEditCarga] = useState('')
+  const [editKmInicial, setEditKmInicial] = useState('')
+  const [editKmFinal, setEditKmFinal] = useState('')
+  const [editPeso, setEditPeso] = useState('')
+  const [editLoading, setEditLoading] = useState(false)
+  const [editKmTotal, setEditKmTotal] = useState(0)
+  const [editPrecoTotal, setEditPrecoTotal] = useState(0)
+  const [editValorKm, setEditValorKm] = useState(0)
+  const [editValorPeso, setEditValorPeso] = useState(0)
+  const [editTaxaArrancada, setEditTaxaArrancada] = useState(0)
 
   useEffect(() => {
     if (user) {
+      fetchLancamentos()
+      fetchPricing()
+    }
+  }, [user])
+
+  // Recarregar preços quando o usuário voltar à aba
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && user) {
+        fetchPricing()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [user])
+
+  useEffect(() => {
+    if (user && pricingLoaded) {
       calcularValores()
     }
-  }, [kmInicial, kmFinal, peso, user])
+  }, [kmInicial, kmFinal, peso, pricingLoaded])
+
+  // Calcular valores da modal de edição
+  useEffect(() => {
+    if (user && editModal && pricingLoaded) {
+      calcularValoresEdit()
+    }
+  }, [editKmInicial, editKmFinal, editPeso, editModal, pricingLoaded])
 
   // Filtrar lançamentos por período
   const filteredLancamentos = useMemo(() => {
@@ -109,8 +148,53 @@ const Lancamentos = () => {
     setFetching(false)
   }
 
-  const calcularValores = async () => {
-    if (!user || !kmInicial || !kmFinal || !peso) {
+  // Buscar preços uma vez e cachear
+  const fetchPricing = async () => {
+    if (!user) return
+
+    try {
+      const [kmRes, kgRes, taxaRes] = await Promise.all([
+        supabase
+          .from('preco_km')
+          .select('valor')
+          .eq('ativo', true)
+          .eq('tenant_id', user.tenant_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('preco_kg')
+          .select('valor')
+          .eq('ativo', true)
+          .eq('tenant_id', user.tenant_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('taxa_arrancada')
+          .select('km_inicial, km_final, valor')
+          .eq('ativo', true)
+          .eq('tenant_id', user.tenant_id)
+          .order('km_inicial', { ascending: true })
+      ])
+
+      setCachedPrecoKm(kmRes.data?.valor || 0)
+      setCachedPrecoKg(kgRes.data?.valor || 0)
+      setCachedTaxas(taxaRes.data || [])
+      setPricingLoaded(true)
+    } catch (error) {
+      console.error('Erro ao carregar preços:', error)
+    }
+  }
+
+  // Encontrar taxa de arrancada pelo km total (cálculo local)
+  const findTaxa = (totalKm: number): number => {
+    const taxa = cachedTaxas.find(t => totalKm >= t.km_inicial && totalKm <= t.km_final)
+    return taxa?.valor || 0
+  }
+
+  const calcularValores = () => {
+    if (!kmInicial || !kmFinal || !peso) {
       setKmTotal(0)
       setPrecoTotal(0)
       return
@@ -119,58 +203,45 @@ const Lancamentos = () => {
     const kmI = parseFloat(kmInicial)
     const kmF = parseFloat(kmFinal)
     const p = parseFloat(peso)
-
-    // Calcular KM total
     const totalKm = kmF - kmI
     setKmTotal(totalKm)
 
-    try {
-      // Buscar preço por KM ativo do tenant
-      const { data: precoKmData } = await supabase
-        .from('preco_km')
-        .select('valor')
-        .eq('ativo', true)
-        .eq('tenant_id', user.tenant_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+    const vKm = cachedPrecoKm
+    const vPeso = cachedPrecoKg
+    const taxa = findTaxa(totalKm)
 
-      // Buscar preço por KG ativo do tenant
-      const { data: precoKgData } = await supabase
-        .from('preco_kg')
-        .select('valor')
-        .eq('ativo', true)
-        .eq('tenant_id', user.tenant_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+    const totalValorKm = totalKm * vKm
+    const totalValorPeso = p * vPeso
+    const total = totalValorKm + totalValorPeso + taxa
 
-      // Buscar taxa de arrancada baseada no KM total do tenant
-      const { data: taxaData } = await supabase
-        .from('taxa_arrancada')
-        .select('valor')
-        .eq('ativo', true)
-        .eq('tenant_id', user.tenant_id)
-        .lte('km_inicial', totalKm)
-        .gte('km_final', totalKm)
-        .limit(1)
-        .maybeSingle()
+    setValorKm(vKm)
+    setValorPeso(vPeso)
+    setTaxaArrancada(taxa)
+    setPrecoTotal(total)
+  }
 
-      const vKm = precoKmData?.valor || 0
-      const vPeso = precoKgData?.valor || 0
-      const taxa = taxaData?.valor || 0
-
-      const totalValorKm = totalKm * vKm
-      const totalValorPeso = p * vPeso
-      const total = totalValorKm + totalValorPeso + taxa
-
-      setValorKm(vKm)
-      setValorPeso(vPeso)
-      setTaxaArrancada(taxa)
-      setPrecoTotal(total)
-    } catch (error) {
-      console.error('Erro ao calcular valores:', error)
+  const calcularValoresEdit = () => {
+    if (!editKmInicial || !editKmFinal || !editPeso) {
+      setEditKmTotal(0)
+      setEditPrecoTotal(0)
+      return
     }
+
+    const kmI = parseFloat(editKmInicial)
+    const kmF = parseFloat(editKmFinal)
+    const p = parseFloat(editPeso)
+    const totalKm = kmF - kmI
+    setEditKmTotal(totalKm)
+
+    const vKm = cachedPrecoKm
+    const vPeso = cachedPrecoKg
+    const taxa = findTaxa(totalKm)
+    const total = (totalKm * vKm) + (p * vPeso) + taxa
+
+    setEditValorKm(vKm)
+    setEditValorPeso(vPeso)
+    setEditTaxaArrancada(taxa)
+    setEditPrecoTotal(total)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,23 +264,12 @@ const Lancamentos = () => {
         tenant_id: user.tenant_id
       }
 
-      if (editingId) {
-        const { error } = await supabase
-          .from('lancamentos')
-          .update({ ...lancamentoData, updated_at: new Date().toISOString() })
-          .eq('id', editingId)
-          .eq('tenant_id', user.tenant_id)
+      const { error } = await supabase
+        .from('lancamentos')
+        .insert([lancamentoData])
 
-        if (error) throw error
-        toast.success(`Lançamento de ${formatDateShortBR(data)} atualizado com sucesso!`, 'Lançamento Atualizado')
-      } else {
-        const { error } = await supabase
-          .from('lancamentos')
-          .insert([lancamentoData])
-
-        if (error) throw error
-        toast.success(`Lançamento de ${formatDateShortBR(data)} registrado! Total: ${formatCurrency(precoTotal)}`, 'Lançamento Criado')
-      }
+      if (error) throw error
+      toast.success(`Lançamento de ${formatDateShortBR(data)} registrado! Total: ${formatCurrency(precoTotal)}`, 'Lançamento Criado')
 
       // Limpar formulário
       setData('')
@@ -217,7 +277,6 @@ const Lancamentos = () => {
       setKmInicial('')
       setKmFinal('')
       setPeso('')
-      setEditingId(null)
       fetchLancamentos()
     } catch (error) {
       console.error('Erro ao salvar:', error)
@@ -227,13 +286,58 @@ const Lancamentos = () => {
     }
   }
 
-  const handleEdit = (lancamento: Lancamento) => {
-    setEditingId(lancamento.id)
-    setData(lancamento.data)
-    setCarga(lancamento.carga ? lancamento.carga.toString() : '')
-    setKmInicial(lancamento.km_inicial.toString())
-    setKmFinal(lancamento.km_final.toString())
-    setPeso(lancamento.peso.toString())
+  const handleEdit = async (lancamento: Lancamento) => {
+    // Recarregar preços para garantir dados atualizados
+    await fetchPricing()
+    setEditId(lancamento.id)
+    setEditData(lancamento.data)
+    setEditCarga(lancamento.carga ? lancamento.carga.toString() : '')
+    setEditKmInicial(lancamento.km_inicial.toString())
+    setEditKmFinal(lancamento.km_final.toString())
+    setEditPeso(lancamento.peso.toString())
+    setEditModal(true)
+  }
+
+  const handleEditSubmit = async () => {
+    if (!user || !editId) return
+    setEditLoading(true)
+
+    try {
+      const lancamentoData = {
+        data: editData,
+        carga: editCarga ? parseInt(editCarga) : null,
+        km_inicial: parseFloat(editKmInicial),
+        km_final: parseFloat(editKmFinal),
+        km_total: editKmTotal,
+        peso: parseFloat(editPeso),
+        valor_km: editValorKm,
+        valor_peso: editValorPeso,
+        taxa_arrancada: editTaxaArrancada,
+        preco_total: editPrecoTotal,
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('lancamentos')
+        .update(lancamentoData)
+        .eq('id', editId)
+        .eq('tenant_id', user.tenant_id)
+
+      if (error) throw error
+      toast.success(`Lançamento de ${formatDateShortBR(editData)} atualizado com sucesso!`, 'Lançamento Atualizado')
+      setEditModal(false)
+      fetchLancamentos()
+    } catch (error) {
+      console.error('Erro ao atualizar:', error)
+      toast.error('Erro ao atualizar lançamento.')
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  const closeEditModal = () => {
+    setEditModal(false)
+    setEditId(null)
   }
 
   const handleDelete = async (id: string) => {
@@ -261,9 +365,7 @@ const Lancamentos = () => {
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Lançamentos</h1>
 
       <div className="card mb-8">
-        <h2 className="text-xl font-semibold mb-4">
-          {editingId ? 'Editar Lançamento' : 'Novo Lançamento'}
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Novo Lançamento</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
@@ -374,22 +476,6 @@ const Lancamentos = () => {
               <Save size={18} />
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null)
-                  setData('')
-                  setCarga('')
-                  setKmInicial('')
-                  setKmFinal('')
-                  setPeso('')
-                }}
-                className="btn btn-secondary"
-              >
-                Cancelar
-              </button>
-            )}
           </div>
         </form>
       </div>
@@ -488,6 +574,151 @@ const Lancamentos = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Edição */}
+      {editModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header da Modal */}
+            <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <Edit2 size={20} />
+                <h3 className="text-lg font-semibold">Editar Lançamento</h3>
+              </div>
+              <button
+                onClick={closeEditModal}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1.5 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Conteúdo da Modal */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Data</label>
+                  <input
+                    type="date"
+                    value={editData}
+                    onChange={(e) => setEditData(e.target.value)}
+                    className="input-field"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Carga</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="999999"
+                    value={editCarga}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 999999)) {
+                        setEditCarga(value)
+                      }
+                    }}
+                    className="input-field"
+                    placeholder="Ex: 123456"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">KM Inicial</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editKmInicial}
+                    onChange={(e) => setEditKmInicial(e.target.value)}
+                    className="input-field"
+                    placeholder="0"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">KM Final</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editKmFinal}
+                    onChange={(e) => setEditKmFinal(e.target.value)}
+                    className="input-field"
+                    placeholder="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Peso (KG)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editPeso}
+                  onChange={(e) => setEditPeso(e.target.value)}
+                  className="input-field"
+                  placeholder="0"
+                  required
+                />
+              </div>
+
+              {/* Cálculo Automático na Modal */}
+              {editKmTotal > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calculator className="text-blue-600" size={18} />
+                    <h4 className="font-semibold text-blue-900 text-sm">Cálculo Automático</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-600 text-xs">KM Total</p>
+                      <p className="font-bold">{formatKm(editKmTotal)} km</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Valor KM</p>
+                      <p className="font-bold">{formatCurrency(editKmTotal * editValorKm)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Valor Peso</p>
+                      <p className="font-bold">{formatCurrency(parseFloat(editPeso || '0') * editValorPeso)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Taxa Arrancada</p>
+                      <p className="font-bold">{formatCurrency(editTaxaArrancada)}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-blue-200 mt-2">
+                    <p className="text-gray-600 text-xs">Preço Total</p>
+                    <p className="font-bold text-xl text-blue-900">{formatCurrency(editPrecoTotal)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Botões da Modal */}
+            <div className="px-6 py-4 border-t border-gray-200 flex gap-3 flex-shrink-0">
+              <button
+                onClick={handleEditSubmit}
+                disabled={editLoading || editKmTotal <= 0}
+                className="flex-1 btn btn-primary py-3 flex items-center justify-center gap-2 text-base font-semibold"
+              >
+                <Save size={18} />
+                {editLoading ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+              <button
+                onClick={closeEditModal}
+                disabled={editLoading}
+                className="flex-1 btn btn-secondary py-3 text-base"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
