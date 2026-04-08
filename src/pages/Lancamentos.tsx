@@ -72,6 +72,12 @@ const Lancamentos = () => {
   const [editTaxaArrancada, setEditTaxaArrancada] = useState(0)
   const [editValorEntrega, setEditValorEntrega] = useState(0)
 
+  // Snapshot dos preços originais do lançamento sendo editado
+  const [snapshotValorKm, setSnapshotValorKm] = useState(0)
+  const [snapshotValorPeso, setSnapshotValorPeso] = useState(0)
+  const [snapshotTaxaArrancada, setSnapshotTaxaArrancada] = useState(0)
+  const [snapshotValorEntrega, setSnapshotValorEntrega] = useState(0)
+
   useEffect(() => {
     if (user) {
       fetchLancamentos()
@@ -98,10 +104,10 @@ const Lancamentos = () => {
 
   // Calcular valores da modal de edição
   useEffect(() => {
-    if (user && editModal && pricingLoaded) {
+    if (user && editModal) {
       calcularValoresEdit()
     }
-  }, [editKmInicial, editKmFinal, editPeso, editModal, pricingLoaded])
+  }, [editKmInicial, editKmFinal, editPeso, editModal, snapshotValorKm, snapshotValorPeso, snapshotTaxaArrancada, snapshotValorEntrega])
 
   // Filtrar lançamentos por período
   const filteredLancamentos = useMemo(() => {
@@ -248,10 +254,11 @@ const Lancamentos = () => {
     const totalKm = kmF - kmI
     setEditKmTotal(totalKm)
 
-    const vKm = cachedPrecoKm
-    const vPeso = cachedPrecoKg
-    const vEntrega = cachedPrecoEntrega
-    const taxa = findTaxa(totalKm)
+    // Usar preços do snapshot original do lançamento
+    const vKm = snapshotValorKm
+    const vPeso = snapshotValorPeso
+    const taxa = snapshotTaxaArrancada
+    const vEntrega = snapshotValorEntrega
     const total = (totalKm * vKm) + (p * vPeso) + taxa + vEntrega
 
     setEditValorKm(vKm)
@@ -304,9 +311,12 @@ const Lancamentos = () => {
     }
   }
 
-  const handleEdit = async (lancamento: Lancamento) => {
-    // Recarregar preços para garantir dados atualizados
-    await fetchPricing()
+  const handleEdit = (lancamento: Lancamento) => {
+    // Carregar preços do snapshot original do lançamento
+    setSnapshotValorKm(lancamento.valor_km)
+    setSnapshotValorPeso(lancamento.valor_peso)
+    setSnapshotTaxaArrancada(lancamento.taxa_arrancada)
+    setSnapshotValorEntrega(lancamento.valor_entrega || 0)
     setEditId(lancamento.id)
     setEditData(lancamento.data)
     setEditCarga(lancamento.carga ? lancamento.carga.toString() : '')
