@@ -61,6 +61,32 @@ export interface Database {
           updated_at?: string
         }
       }
+      preco_entrega: {
+        Row: {
+          id: string
+          valor: number
+          ativo: boolean
+          tenant_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          valor: number
+          ativo?: boolean
+          tenant_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          valor?: number
+          ativo?: boolean
+          tenant_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       taxa_arrancada: {
         Row: {
           id: string
@@ -105,6 +131,7 @@ export interface Database {
           valor_km: number
           valor_peso: number
           taxa_arrancada: number
+          valor_entrega: number
           preco_total: number
           tenant_id: string
           created_at: string
@@ -121,6 +148,7 @@ export interface Database {
           valor_km: number
           valor_peso: number
           taxa_arrancada: number
+          valor_entrega?: number
           preco_total: number
           tenant_id: string
           created_at?: string
@@ -137,6 +165,7 @@ export interface Database {
           valor_km?: number
           valor_peso?: number
           taxa_arrancada?: number
+          valor_entrega?: number
           preco_total?: number
           tenant_id?: string
           created_at?: string

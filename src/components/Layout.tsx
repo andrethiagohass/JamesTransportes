@@ -5,13 +5,17 @@ import {
   DollarSign, 
   Weight, 
   TrendingUp, 
+  PackageCheck,
   FileText, 
   BarChart3,
   Menu,
   X,
   LogOut,
   User,
-  Users
+  Users,
+  ChevronDown,
+  ChevronRight,
+  Tag
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -27,21 +31,16 @@ const Layout = ({ children }: LayoutProps) => {
   const { logout, user } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
+  // Rotas do submenu "Tabelas de Preços"
+  const pricingRoutes = [
     { name: 'Preço/KM', href: '/preco-km', icon: DollarSign },
     { name: 'Preço/KG', href: '/preco-kg', icon: Weight },
     { name: 'Taxa Arrancada', href: '/taxa-arrancada', icon: TrendingUp },
-    { name: 'Lançamentos', href: '/lancamentos', icon: FileText },
-    { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
+    { name: 'Valor Entrega', href: '/preco-entrega', icon: PackageCheck },
   ]
 
-  // Adicionar menu Admin apenas para super_admin
-  const adminNavigation = user?.role === 'super_admin' 
-    ? [{ name: 'Administração', href: '/admin', icon: Users }]
-    : []
-
-  const allNavigation = [...navigation, ...adminNavigation]
+  const isPricingActive = pricingRoutes.some(r => location.pathname === r.href)
+  const [pricingOpen, setPricingOpen] = useState(isPricingActive)
 
   const handleLogout = () => {
     logout()
@@ -113,23 +112,98 @@ const Layout = ({ children }: LayoutProps) => {
         {/* Sidebar - Desktop */}
         <aside className="hidden md:block w-64 bg-white shadow-md min-h-[calc(100vh-4rem)]">
           <nav className="p-4 space-y-2">
-            {allNavigation.map((item) => {
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-primary-100 text-primary-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+            {/* Dashboard */}
+            <Link
+              to="/dashboard"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/dashboard')
+                  ? 'bg-primary-100 text-primary-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Home size={20} />
+              <span>Dashboard</span>
+            </Link>
+
+            {/* Submenu: Tabelas de Preços */}
+            <div>
+              <button
+                onClick={() => setPricingOpen(!pricingOpen)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                  isPricingActive
+                    ? 'bg-primary-50 text-primary-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Tag size={20} />
+                  <span>Tabelas de Preços</span>
+                </div>
+                {pricingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+              {pricingOpen && (
+                <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                  {pricingRoutes.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
+                          isActive(item.href)
+                            ? 'bg-primary-100 text-primary-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span>{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Lançamentos */}
+            <Link
+              to="/lancamentos"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/lancamentos')
+                  ? 'bg-primary-100 text-primary-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <FileText size={20} />
+              <span>Lançamentos</span>
+            </Link>
+
+            {/* Relatórios */}
+            <Link
+              to="/relatorios"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/relatorios')
+                  ? 'bg-primary-100 text-primary-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 size={20} />
+              <span>Relatórios</span>
+            </Link>
+
+            {/* Admin (super_admin only) */}
+            {user?.role === 'super_admin' && (
+              <Link
+                to="/admin"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive('/admin')
+                    ? 'bg-primary-100 text-primary-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Users size={20} />
+                <span>Administração</span>
+              </Link>
+            )}
           </nav>
         </aside>
 
@@ -161,24 +235,103 @@ const Layout = ({ children }: LayoutProps) => {
                 </div>
 
                 <nav className="space-y-2">
-                  {allNavigation.map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive(item.href)
-                            ? 'bg-primary-100 text-primary-700 font-medium'
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        <Icon size={20} />
-                        <span>{item.name}</span>
-                      </Link>
-                    )
-                  })}
+                  {/* Dashboard */}
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive('/dashboard')
+                        ? 'bg-primary-100 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Home size={20} />
+                    <span>Dashboard</span>
+                  </Link>
+
+                  {/* Submenu: Tabelas de Preços */}
+                  <div>
+                    <button
+                      onClick={() => setPricingOpen(!pricingOpen)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isPricingActive
+                          ? 'bg-primary-50 text-primary-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Tag size={20} />
+                        <span>Tabelas de Preços</span>
+                      </div>
+                      {pricingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                    {pricingOpen && (
+                      <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                        {pricingRoutes.map((item) => {
+                          const Icon = item.icon
+                          return (
+                            <Link
+                              key={item.name}
+                              to={item.href}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
+                                isActive(item.href)
+                                  ? 'bg-primary-100 text-primary-700 font-medium'
+                                  : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              <Icon size={18} />
+                              <span>{item.name}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lançamentos */}
+                  <Link
+                    to="/lancamentos"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive('/lancamentos')
+                        ? 'bg-primary-100 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FileText size={20} />
+                    <span>Lançamentos</span>
+                  </Link>
+
+                  {/* Relatórios */}
+                  <Link
+                    to="/relatorios"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive('/relatorios')
+                        ? 'bg-primary-100 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <BarChart3 size={20} />
+                    <span>Relatórios</span>
+                  </Link>
+
+                  {/* Admin (super_admin only) */}
+                  {user?.role === 'super_admin' && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        isActive('/admin')
+                          ? 'bg-primary-100 text-primary-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Users size={20} />
+                      <span>Administração</span>
+                    </Link>
+                  )}
                 </nav>
               </div>
             </div>

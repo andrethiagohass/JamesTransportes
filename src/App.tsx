@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import PrecoKm from './pages/PrecoKm'
 import PrecoKg from './pages/PrecoKg'
 import TaxaArrancada from './pages/TaxaArrancada'
+import PrecoEntrega from './pages/PrecoEntrega'
 import Lancamentos from './pages/Lancamentos'
 import Relatorios from './pages/Relatorios'
 import Admin from './pages/Admin'
@@ -69,6 +70,7 @@ const AppRoutes = () => {
                 <Route path="/preco-km" element={<PrecoKm />} />
                 <Route path="/preco-kg" element={<PrecoKg />} />
                 <Route path="/taxa-arrancada" element={<TaxaArrancada />} />
+                <Route path="/preco-entrega" element={<PrecoEntrega />} />
                 <Route path="/lancamentos" element={<Lancamentos />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/admin" element={<Admin />} />

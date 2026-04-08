@@ -20,6 +20,7 @@ interface Lancamento {
   valor_km: number
   valor_peso: number
   taxa_arrancada: number
+  valor_entrega: number
   preco_total: number
   tenant_id: string
   created_at: string
@@ -43,6 +44,7 @@ const Lancamentos = () => {
   // Cache de preços (carregados uma vez)
   const [cachedPrecoKm, setCachedPrecoKm] = useState<number>(0)
   const [cachedPrecoKg, setCachedPrecoKg] = useState<number>(0)
+  const [cachedPrecoEntrega, setCachedPrecoEntrega] = useState<number>(0)
   const [cachedTaxas, setCachedTaxas] = useState<{ km_inicial: number; km_final: number; valor: number }[]>([])
   const [pricingLoaded, setPricingLoaded] = useState(false)
 
@@ -52,6 +54,7 @@ const Lancamentos = () => {
   const [valorKm, setValorKm] = useState(0)
   const [valorPeso, setValorPeso] = useState(0)
   const [taxaArrancada, setTaxaArrancada] = useState(0)
+  const [valorEntrega, setValorEntrega] = useState(0)
 
   // Estado da modal de edição
   const [editModal, setEditModal] = useState(false)
@@ -67,6 +70,7 @@ const Lancamentos = () => {
   const [editValorKm, setEditValorKm] = useState(0)
   const [editValorPeso, setEditValorPeso] = useState(0)
   const [editTaxaArrancada, setEditTaxaArrancada] = useState(0)
+  const [editValorEntrega, setEditValorEntrega] = useState(0)
 
   useEffect(() => {
     if (user) {
@@ -153,7 +157,7 @@ const Lancamentos = () => {
     if (!user) return
 
     try {
-      const [kmRes, kgRes, taxaRes] = await Promise.all([
+      const [kmRes, kgRes, entregaRes, taxaRes] = await Promise.all([
         supabase
           .from('preco_km')
           .select('valor')
@@ -171,6 +175,14 @@ const Lancamentos = () => {
           .limit(1)
           .maybeSingle(),
         supabase
+          .from('preco_entrega')
+          .select('valor')
+          .eq('ativo', true)
+          .eq('tenant_id', user.tenant_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
           .from('taxa_arrancada')
           .select('km_inicial, km_final, valor')
           .eq('ativo', true)
@@ -180,6 +192,7 @@ const Lancamentos = () => {
 
       setCachedPrecoKm(kmRes.data?.valor || 0)
       setCachedPrecoKg(kgRes.data?.valor || 0)
+      setCachedPrecoEntrega(entregaRes.data?.valor || 0)
       setCachedTaxas(taxaRes.data || [])
       setPricingLoaded(true)
     } catch (error) {
@@ -208,15 +221,17 @@ const Lancamentos = () => {
 
     const vKm = cachedPrecoKm
     const vPeso = cachedPrecoKg
+    const vEntrega = cachedPrecoEntrega
     const taxa = findTaxa(totalKm)
 
     const totalValorKm = totalKm * vKm
     const totalValorPeso = p * vPeso
-    const total = totalValorKm + totalValorPeso + taxa
+    const total = totalValorKm + totalValorPeso + taxa + vEntrega
 
     setValorKm(vKm)
     setValorPeso(vPeso)
     setTaxaArrancada(taxa)
+    setValorEntrega(vEntrega)
     setPrecoTotal(total)
   }
 
@@ -235,12 +250,14 @@ const Lancamentos = () => {
 
     const vKm = cachedPrecoKm
     const vPeso = cachedPrecoKg
+    const vEntrega = cachedPrecoEntrega
     const taxa = findTaxa(totalKm)
-    const total = (totalKm * vKm) + (p * vPeso) + taxa
+    const total = (totalKm * vKm) + (p * vPeso) + taxa + vEntrega
 
     setEditValorKm(vKm)
     setEditValorPeso(vPeso)
     setEditTaxaArrancada(taxa)
+    setEditValorEntrega(vEntrega)
     setEditPrecoTotal(total)
   }
 
@@ -260,6 +277,7 @@ const Lancamentos = () => {
         valor_km: valorKm,
         valor_peso: valorPeso,
         taxa_arrancada: taxaArrancada,
+        valor_entrega: valorEntrega,
         preco_total: precoTotal,
         tenant_id: user.tenant_id
       }
@@ -313,6 +331,7 @@ const Lancamentos = () => {
         valor_km: editValorKm,
         valor_peso: editValorPeso,
         taxa_arrancada: editTaxaArrancada,
+        valor_entrega: editValorEntrega,
         preco_total: editPrecoTotal,
         updated_at: new Date().toISOString()
       }
@@ -440,7 +459,7 @@ const Lancamentos = () => {
                 <Calculator className="text-blue-600" size={20} />
                 <h3 className="font-semibold text-blue-900">Cálculo Automático</h3>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                 <div>
                   <p className="text-gray-600">KM Total</p>
                   <p className="font-bold text-lg">{formatKm(kmTotal)} km</p>
@@ -458,6 +477,10 @@ const Lancamentos = () => {
                 <div>
                   <p className="text-gray-600">Taxa Arrancada</p>
                   <p className="font-bold text-lg">{formatCurrency(taxaArrancada)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Valor Entrega</p>
+                  <p className="font-bold text-lg">{formatCurrency(valorEntrega)}</p>
                 </div>
               </div>
               <div className="pt-3 border-t border-blue-200 mt-3">
@@ -688,6 +711,10 @@ const Lancamentos = () => {
                     <div>
                       <p className="text-gray-600 text-xs">Taxa Arrancada</p>
                       <p className="font-bold">{formatCurrency(editTaxaArrancada)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Valor Entrega</p>
+                      <p className="font-bold">{formatCurrency(editValorEntrega)}</p>
                     </div>
                   </div>
                   <div className="pt-2 border-t border-blue-200 mt-2">

@@ -125,7 +125,7 @@ const Relatorios = () => {
     
     doc.setFontSize(14)
     doc.setFont('helvetica', 'normal')
-    doc.text('Relatorio de Lancamentos', pageWidth / 2, 25, { align: 'center' })
+    doc.text('Relatório de Lançamentos', pageWidth / 2, 25, { align: 'center' })
     
     // Informações do Filtro
     doc.setTextColor(0, 0, 0)
@@ -292,7 +292,7 @@ const Relatorios = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Relatórios</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Relatório de Lançamentos</h1>
         
         {stats && lancamentos.length > 0 && (
           <button
