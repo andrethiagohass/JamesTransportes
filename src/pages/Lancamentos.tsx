@@ -554,7 +554,7 @@ const Lancamentos = () => {
           <div className="flex gap-4">
             <button
               type="submit"
-              disabled={loading || kmTotal === 0}
+              disabled={loading || kmTotal === 0 || qtdEntregas < 1}
               className="btn btn-primary flex items-center gap-2"
             >
               <Save size={18} />
@@ -760,7 +760,7 @@ const Lancamentos = () => {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setEditQtdEntregas(Math.max(0, editQtdEntregas - 1))}
+                    onClick={() => setEditQtdEntregas(Math.max(1, editQtdEntregas - 1))}
                     className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
                   >
                     <Minus size={16} />
@@ -776,6 +776,9 @@ const Lancamentos = () => {
                       } else {
                         setEditQtdEntregas(Math.max(0, parseInt(val) || 0))
                       }
+                    }}
+                    onBlur={() => {
+                      if (editQtdEntregas < 1) setEditQtdEntregas(1)
                     }}
                     className="input-field text-center w-20"
                   />
@@ -833,7 +836,7 @@ const Lancamentos = () => {
             <div className="px-6 py-4 border-t border-gray-200 flex gap-3 flex-shrink-0">
               <button
                 onClick={handleEditSubmit}
-                disabled={editLoading || editKmTotal <= 0}
+                disabled={editLoading || editKmTotal <= 0 || editQtdEntregas < 1}
                 className="flex-1 btn btn-primary py-3 flex items-center justify-center gap-2 text-base font-semibold"
               >
                 <Save size={18} />
