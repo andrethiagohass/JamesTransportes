@@ -768,8 +768,15 @@ const Lancamentos = () => {
                   <input
                     type="number"
                     min="0"
-                    value={editQtdEntregas}
-                    onChange={(e) => setEditQtdEntregas(Math.max(0, parseInt(e.target.value) || 0))}
+                    value={editQtdEntregas || ''}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val === '') {
+                        setEditQtdEntregas(0)
+                      } else {
+                        setEditQtdEntregas(Math.max(0, parseInt(val) || 0))
+                      }
+                    }}
                     className="input-field text-center w-20"
                   />
                   <button
