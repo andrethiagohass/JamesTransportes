@@ -16,6 +16,7 @@ interface Lancamento {
   carga: number | null
   km_total: number
   peso: number
+  qtd_entregas: number
   preco_total: number
   tenant_id: string
 }
@@ -217,12 +218,13 @@ const Relatorios = () => {
       lanc.carga || '-',
       `${formatKm(lanc.km_total)} km`,
       `${formatPeso(lanc.peso)} kg`,
+      lanc.qtd_entregas || 0,
       formatCurrency(lanc.preco_total)
     ])
     
     autoTable(doc, {
       startY: 130,
-      head: [['Data', 'Carga', 'KM Total', 'Peso', 'Valor']],
+      head: [['Data', 'Carga', 'KM Total', 'Peso', 'Entregas', 'Valor']],
       body: tableData,
       theme: 'striped',
       margin: { left: 14, right: 14 },
@@ -247,7 +249,8 @@ const Relatorios = () => {
         1: { halign: 'center', fontStyle: 'bold', textColor: [59, 130, 246] },
         2: { halign: 'center' },
         3: { halign: 'center' },
-        4: { halign: 'center', fontStyle: 'bold', textColor: [22, 163, 74] }
+        4: { halign: 'center', fontStyle: 'bold', textColor: [124, 58, 237] },
+        5: { halign: 'center', fontStyle: 'bold', textColor: [22, 163, 74] }
       }
     })
     
@@ -406,6 +409,7 @@ const Relatorios = () => {
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Carga</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">Peso</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Entregas</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Valor</th>
                     </tr>
                   </thead>
@@ -427,6 +431,11 @@ const Relatorios = () => {
                         </td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{formatKm(lanc.km_total)} km</td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{formatPeso(lanc.peso)} kg</td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
+                          <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                            {lanc.qtd_entregas || 0}
+                          </span>
+                        </td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-green-600">
                           <span className="hidden sm:inline">{formatCurrency(lanc.preco_total)}</span>
                           <span className="sm:hidden">R$ {formatKm(lanc.preco_total)}</span>

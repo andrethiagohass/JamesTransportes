@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Calculator, TruckIcon, Filter, X } from 'lucide-react'
+import { Save, Edit2, Trash2, Calculator, TruckIcon, Filter, X, Plus, Minus } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
@@ -21,6 +21,7 @@ interface Lancamento {
   valor_peso: number
   taxa_arrancada: number
   valor_entrega: number
+  qtd_entregas: number
   preco_total: number
   tenant_id: string
   created_at: string
@@ -38,6 +39,7 @@ const Lancamentos = () => {
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
   const [peso, setPeso] = useState('')
+  const [qtdEntregas, setQtdEntregas] = useState(0)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   
@@ -64,6 +66,7 @@ const Lancamentos = () => {
   const [editKmInicial, setEditKmInicial] = useState('')
   const [editKmFinal, setEditKmFinal] = useState('')
   const [editPeso, setEditPeso] = useState('')
+  const [editQtdEntregas, setEditQtdEntregas] = useState(0)
   const [editLoading, setEditLoading] = useState(false)
   const [editKmTotal, setEditKmTotal] = useState(0)
   const [editPrecoTotal, setEditPrecoTotal] = useState(0)
@@ -100,14 +103,14 @@ const Lancamentos = () => {
     if (user && pricingLoaded) {
       calcularValores()
     }
-  }, [kmInicial, kmFinal, peso, pricingLoaded])
+  }, [kmInicial, kmFinal, peso, qtdEntregas, pricingLoaded])
 
   // Calcular valores da modal de edição
   useEffect(() => {
     if (user && editModal) {
       calcularValoresEdit()
     }
-  }, [editKmInicial, editKmFinal, editPeso, editModal, snapshotValorKm, snapshotValorPeso, snapshotTaxaArrancada, snapshotValorEntrega])
+  }, [editKmInicial, editKmFinal, editPeso, editQtdEntregas, editModal, snapshotValorKm, snapshotValorPeso, snapshotTaxaArrancada, snapshotValorEntrega])
 
   // Filtrar lançamentos por período
   const filteredLancamentos = useMemo(() => {
@@ -232,12 +235,13 @@ const Lancamentos = () => {
 
     const totalValorKm = totalKm * vKm
     const totalValorPeso = p * vPeso
-    const total = totalValorKm + totalValorPeso + taxa + vEntrega
+    const totalValorEntrega = qtdEntregas * vEntrega
+    const total = totalValorKm + totalValorPeso + taxa + totalValorEntrega
 
     setValorKm(vKm)
     setValorPeso(vPeso)
     setTaxaArrancada(taxa)
-    setValorEntrega(vEntrega)
+    setValorEntrega(totalValorEntrega)
     setPrecoTotal(total)
   }
 
@@ -259,12 +263,13 @@ const Lancamentos = () => {
     const vPeso = snapshotValorPeso
     const taxa = snapshotTaxaArrancada
     const vEntrega = snapshotValorEntrega
-    const total = (totalKm * vKm) + (p * vPeso) + taxa + vEntrega
+    const totalValorEntrega = editQtdEntregas * vEntrega
+    const total = (totalKm * vKm) + (p * vPeso) + taxa + totalValorEntrega
 
     setEditValorKm(vKm)
     setEditValorPeso(vPeso)
     setEditTaxaArrancada(taxa)
-    setEditValorEntrega(vEntrega)
+    setEditValorEntrega(totalValorEntrega)
     setEditPrecoTotal(total)
   }
 
@@ -285,6 +290,7 @@ const Lancamentos = () => {
         valor_peso: valorPeso,
         taxa_arrancada: taxaArrancada,
         valor_entrega: valorEntrega,
+        qtd_entregas: qtdEntregas,
         preco_total: precoTotal,
         tenant_id: user.tenant_id
       }
@@ -302,6 +308,7 @@ const Lancamentos = () => {
       setKmInicial('')
       setKmFinal('')
       setPeso('')
+      setQtdEntregas(0)
       fetchLancamentos()
     } catch (error) {
       console.error('Erro ao salvar:', error)
@@ -316,13 +323,17 @@ const Lancamentos = () => {
     setSnapshotValorKm(lancamento.valor_km)
     setSnapshotValorPeso(lancamento.valor_peso)
     setSnapshotTaxaArrancada(lancamento.taxa_arrancada)
-    setSnapshotValorEntrega(lancamento.valor_entrega || 0)
+    // Derivar valor unitário de entrega a partir do total e quantidade
+    const qtd = lancamento.qtd_entregas || 0
+    const unitEntrega = qtd > 0 ? (lancamento.valor_entrega || 0) / qtd : 0
+    setSnapshotValorEntrega(unitEntrega)
     setEditId(lancamento.id)
     setEditData(lancamento.data)
     setEditCarga(lancamento.carga ? lancamento.carga.toString() : '')
     setEditKmInicial(lancamento.km_inicial.toString())
     setEditKmFinal(lancamento.km_final.toString())
     setEditPeso(lancamento.peso.toString())
+    setEditQtdEntregas(lancamento.qtd_entregas || 0)
     setEditModal(true)
   }
 
@@ -342,6 +353,7 @@ const Lancamentos = () => {
         valor_peso: editValorPeso,
         taxa_arrancada: editTaxaArrancada,
         valor_entrega: editValorEntrega,
+        qtd_entregas: editQtdEntregas,
         preco_total: editPrecoTotal,
         updated_at: new Date().toISOString()
       }
@@ -396,7 +408,7 @@ const Lancamentos = () => {
       <div className="card mb-8">
         <h2 className="text-xl font-semibold mb-4">Novo Lançamento</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
               <label className="label">Data</label>
               <input
@@ -460,6 +472,32 @@ const Lancamentos = () => {
                 required
               />
             </div>
+            <div>
+              <label className="label">Entregas</label>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setQtdEntregas(Math.max(0, qtdEntregas - 1))}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
+                >
+                  <Minus size={16} />
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={qtdEntregas}
+                  onChange={(e) => setQtdEntregas(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="input-field text-center w-16"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQtdEntregas(qtdEntregas + 1)}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-100 hover:bg-primary-200 text-primary-700 transition-colors"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Cálculos */}
@@ -491,6 +529,9 @@ const Lancamentos = () => {
                 <div>
                   <p className="text-gray-600">Valor Entrega</p>
                   <p className="font-bold text-lg">{formatCurrency(valorEntrega)}</p>
+                  {qtdEntregas > 0 && cachedPrecoEntrega > 0 && (
+                    <p className="text-xs text-gray-500">{qtdEntregas}× {formatCurrency(cachedPrecoEntrega)}</p>
+                  )}
                 </div>
               </div>
               <div className="pt-3 border-t border-blue-200 mt-3">
@@ -553,6 +594,7 @@ const Lancamentos = () => {
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Carga</th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Peso</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Entregas</th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Total</th>
                   <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">Ações</th>
                 </tr>
@@ -582,6 +624,11 @@ const Lancamentos = () => {
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">{formatPeso(lanc.peso)} kg</td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
+                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                        {lanc.qtd_entregas || 0}
+                      </span>
+                    </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-600">
                       <span className="hidden sm:inline">{formatCurrency(lanc.preco_total)}</span>
                       <span className="sm:hidden">R$ {formatKm(lanc.preco_total)}</span>
@@ -698,6 +745,33 @@ const Lancamentos = () => {
                 />
               </div>
 
+              <div>
+                <label className="label">Entregas</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditQtdEntregas(Math.max(0, editQtdEntregas - 1))}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editQtdEntregas}
+                    onChange={(e) => setEditQtdEntregas(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="input-field text-center w-20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditQtdEntregas(editQtdEntregas + 1)}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-100 hover:bg-primary-200 text-primary-700 transition-colors"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+
               {/* Cálculo Automático na Modal */}
               {editKmTotal > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg space-y-2">
@@ -725,6 +799,9 @@ const Lancamentos = () => {
                     <div>
                       <p className="text-gray-600 text-xs">Valor Entrega</p>
                       <p className="font-bold">{formatCurrency(editValorEntrega)}</p>
+                      {editQtdEntregas > 0 && snapshotValorEntrega > 0 && (
+                        <p className="text-xs text-gray-500">{editQtdEntregas}× {formatCurrency(snapshotValorEntrega)}</p>
+                      )}
                     </div>
                   </div>
                   <div className="pt-2 border-t border-blue-200 mt-2">

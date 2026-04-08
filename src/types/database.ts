@@ -132,6 +132,7 @@ export interface Database {
           valor_peso: number
           taxa_arrancada: number
           valor_entrega: number
+          qtd_entregas: number
           preco_total: number
           tenant_id: string
           created_at: string
@@ -149,6 +150,7 @@ export interface Database {
           valor_peso: number
           taxa_arrancada: number
           valor_entrega?: number
+          qtd_entregas?: number
           preco_total: number
           tenant_id: string
           created_at?: string
@@ -166,6 +168,7 @@ export interface Database {
           valor_peso?: number
           taxa_arrancada?: number
           valor_entrega?: number
+          qtd_entregas?: number
           preco_total?: number
           tenant_id?: string
           created_at?: string
