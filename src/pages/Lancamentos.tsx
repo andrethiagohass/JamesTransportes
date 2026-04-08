@@ -39,7 +39,7 @@ const Lancamentos = () => {
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
   const [peso, setPeso] = useState('')
-  const [qtdEntregas, setQtdEntregas] = useState(1)
+  const [qtdEntregas, setQtdEntregas] = useState(30)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   
@@ -308,7 +308,7 @@ const Lancamentos = () => {
       setKmInicial('')
       setKmFinal('')
       setPeso('')
-      setQtdEntregas(1)
+      setQtdEntregas(30)
       fetchLancamentos()
     } catch (error) {
       console.error('Erro ao salvar:', error)
@@ -484,9 +484,19 @@ const Lancamentos = () => {
                 </button>
                 <input
                   type="number"
-                  min="0"
-                  value={qtdEntregas}
-                  onChange={(e) => setQtdEntregas(Math.max(1, parseInt(e.target.value) || 1))}
+                  min="1"
+                  value={qtdEntregas || ''}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val === '') {
+                      setQtdEntregas(0)
+                    } else {
+                      setQtdEntregas(Math.max(0, parseInt(val) || 0))
+                    }
+                  }}
+                  onBlur={() => {
+                    if (qtdEntregas < 1) setQtdEntregas(1)
+                  }}
                   className="input-field text-center w-16"
                 />
                 <button
