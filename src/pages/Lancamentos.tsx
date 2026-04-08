@@ -39,7 +39,7 @@ const Lancamentos = () => {
   const [kmInicial, setKmInicial] = useState('')
   const [kmFinal, setKmFinal] = useState('')
   const [peso, setPeso] = useState('')
-  const [qtdEntregas, setQtdEntregas] = useState(0)
+  const [qtdEntregas, setQtdEntregas] = useState(1)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   
@@ -308,7 +308,7 @@ const Lancamentos = () => {
       setKmInicial('')
       setKmFinal('')
       setPeso('')
-      setQtdEntregas(0)
+      setQtdEntregas(1)
       fetchLancamentos()
     } catch (error) {
       console.error('Erro ao salvar:', error)
@@ -477,7 +477,7 @@ const Lancamentos = () => {
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => setQtdEntregas(Math.max(0, qtdEntregas - 1))}
+                  onClick={() => setQtdEntregas(Math.max(1, qtdEntregas - 1))}
                   className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
                 >
                   <Minus size={16} />
@@ -486,7 +486,7 @@ const Lancamentos = () => {
                   type="number"
                   min="0"
                   value={qtdEntregas}
-                  onChange={(e) => setQtdEntregas(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={(e) => setQtdEntregas(Math.max(1, parseInt(e.target.value) || 1))}
                   className="input-field text-center w-16"
                 />
                 <button
