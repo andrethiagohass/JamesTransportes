@@ -497,7 +497,7 @@ const Lancamentos = () => {
                   onBlur={() => {
                     if (qtdEntregas < 1) setQtdEntregas(1)
                   }}
-                  className="input-field text-center w-16"
+                  className="input-field text-center w-20"
                 />
                 <button
                   type="button"
