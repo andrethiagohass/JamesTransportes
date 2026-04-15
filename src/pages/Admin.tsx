@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Users, Building2, Key, Mail } from 'lucide-react'
+import { Save, Edit2, Trash2, Users, Building2, Key, Mail, Download, Database } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
+import { exportJSON, exportSQL } from '../utils/exportUtils'
 
 interface Usuario {
   id: string
@@ -28,6 +29,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [createdUserInfo, setCreatedUserInfo] = useState<{ email: string; senha: string } | null>(null)
+  const [exporting, setExporting] = useState<'json' | 'sql' | null>(null)
 
   // Verificar se o usuário é super_admin
   const isSuperAdmin = user?.role === 'super_admin'
@@ -584,6 +586,58 @@ Deseja realmente continuar?`
             </table>
           </div>
         )}
+      </div>
+
+      {/* Backup de Dados */}
+      <div className="card mt-8">
+        <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+          <Database size={20} />
+          Backup de Dados
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Exporte todos os dados do sistema. O plano gratuito do Supabase <strong>não inclui backups automáticos</strong> — faça backup regularmente.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={async () => {
+              setExporting('json')
+              try {
+                const total = await exportJSON(user!.tenant_id)
+                toast.success(`Backup JSON exportado com ${total} registros!`, 'Backup Completo')
+              } catch (err: any) {
+                toast.error(err.message || 'Erro ao exportar backup')
+              } finally {
+                setExporting(null)
+              }
+            }}
+            disabled={exporting !== null}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Download size={18} />
+            {exporting === 'json' ? 'Exportando...' : 'Exportar JSON'}
+          </button>
+          <button
+            onClick={async () => {
+              setExporting('sql')
+              try {
+                const total = await exportSQL(user!.tenant_id)
+                toast.success(`Backup SQL exportado com ${total} registros!`, 'Backup Completo')
+              } catch (err: any) {
+                toast.error(err.message || 'Erro ao exportar backup')
+              } finally {
+                setExporting(null)
+              }
+            }}
+            disabled={exporting !== null}
+            className="btn btn-secondary flex items-center gap-2"
+          >
+            <Download size={18} />
+            {exporting === 'sql' ? 'Exportando...' : 'Exportar SQL'}
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          <strong>JSON:</strong> formato completo para reimportação &nbsp;|&nbsp; <strong>SQL:</strong> cole diretamente no Supabase SQL Editor para restaurar
+        </p>
       </div>
 
       {/* Informações úteis */}
