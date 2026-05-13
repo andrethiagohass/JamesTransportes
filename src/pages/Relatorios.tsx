@@ -7,7 +7,7 @@ import { FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
-import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
+import { formatKm, formatPeso, formatCurrency, formatNumber } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
 
 interface Lancamento {
@@ -26,6 +26,7 @@ interface MesData {
   totalViagens: number
   totalKm: number
   totalPeso: number
+  totalEntregas: number
   totalReceita: number
 }
 
@@ -73,6 +74,7 @@ const Relatorios = () => {
         const totalViagens = data.length
         const totalKm = data.reduce((sum: number, item: any) => sum + item.km_total, 0)
         const totalPeso = data.reduce((sum: number, item: any) => sum + item.peso, 0)
+        const totalEntregas = data.reduce((sum: number, item: any) => sum + (item.qtd_entregas || 0), 0)
         const totalReceita = data.reduce((sum: number, item: any) => sum + item.preco_total, 0)
 
         // Criar label do período (sem conversão de timezone)
@@ -85,6 +87,7 @@ const Relatorios = () => {
           totalViagens,
           totalKm,
           totalPeso,
+          totalEntregas,
           totalReceita,
         })
 
@@ -149,69 +152,66 @@ const Relatorios = () => {
     // Boxes com estatísticas
     const boxY = 72
     const boxHeight = 20
-    const boxWidth = 45
-    const spacing = 2
-    
-    // Box 1 - Total de Viagens
-    doc.setFillColor(219, 234, 254) // blue-100
-    doc.roundedRect(14, boxY, boxWidth, boxHeight, 2, 2, 'F')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text('Total de Viagens', 16, boxY + 6)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(29, 78, 216) // blue-700
-    doc.text(stats.totalViagens.toString(), 16, boxY + 15)
-    
-    // Box 2 - Total KM
-    doc.setFillColor(220, 252, 231) // green-100
-    doc.roundedRect(14 + boxWidth + spacing, boxY, boxWidth, boxHeight, 2, 2, 'F')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text('Total KM', 16 + boxWidth + spacing, boxY + 6)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(21, 128, 61) // green-700
-    doc.text(`${formatKm(stats.totalKm)} km`, 16 + boxWidth + spacing, boxY + 15)
-    
-    // Box 3 - Total Peso
-    doc.setFillColor(254, 243, 199) // orange-100
-    doc.roundedRect(14 + (boxWidth + spacing) * 2, boxY, boxWidth, boxHeight, 2, 2, 'F')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text('Total Peso', 16 + (boxWidth + spacing) * 2, boxY + 6)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(194, 65, 12) // orange-700
-    doc.text(`${formatPeso(stats.totalPeso)} kg`, 16 + (boxWidth + spacing) * 2, boxY + 15)
-    
-    // Box 4 - Receita Total
-    doc.setFillColor(224, 242, 254) // sky-100
-    doc.roundedRect(14 + (boxWidth + spacing) * 3, boxY, boxWidth, boxHeight, 2, 2, 'F')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text('Receita Total', 16 + (boxWidth + spacing) * 3, boxY + 6)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(14, 165, 233) // primary-500
-    doc.text(formatCurrency(stats.totalReceita), 16 + (boxWidth + spacing) * 3, boxY + 15)
-    
-    // Médias
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Médias por Viagem', 14, 105)
-    
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`KM Médio: ${formatKm(stats.totalKm / stats.totalViagens)} km`, 14, 112)
-    doc.text(`Peso Médio: ${formatPeso(stats.totalPeso / stats.totalViagens)} kg`, 80, 112)
-    doc.text(`Receita Média: ${formatCurrency(stats.totalReceita / stats.totalViagens)}`, 146, 112)
+    const boxWidth = 56
+    const spacing = 4
+    const secondRowY = boxY + boxHeight + 8
+    const summaryBoxes = [
+      {
+        label: 'Total de Viagens',
+        value: stats.totalViagens.toString(),
+        fillColor: [219, 234, 254] as const,
+        textColor: [29, 78, 216] as const,
+      },
+      {
+        label: 'Total KM',
+        value: `${formatKm(stats.totalKm)} km`,
+        fillColor: [220, 252, 231] as const,
+        textColor: [21, 128, 61] as const,
+      },
+      {
+        label: 'Total Peso',
+        value: `${formatPeso(stats.totalPeso)} kg`,
+        fillColor: [254, 243, 199] as const,
+        textColor: [194, 65, 12] as const,
+      },
+      {
+        label: 'Total Entregas',
+        value: formatNumber(stats.totalEntregas),
+        fillColor: [243, 232, 255] as const,
+        textColor: [126, 34, 206] as const,
+      },
+      {
+        label: 'Receita Total',
+        value: formatCurrency(stats.totalReceita),
+        fillColor: [224, 242, 254] as const,
+        textColor: [14, 165, 233] as const,
+      },
+    ]
+
+    summaryBoxes.forEach((box, index) => {
+      const isSecondRow = index >= 3
+      const columnIndex = isSecondRow ? index - 3 : index
+      const x = 14 + columnIndex * (boxWidth + spacing)
+      const y = isSecondRow ? secondRowY : boxY
+      const [fillR, fillG, fillB] = box.fillColor
+      const [textR, textG, textB] = box.textColor
+
+      doc.setFillColor(fillR, fillG, fillB)
+      doc.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'F')
+      doc.setFontSize(9)
+      doc.setTextColor(100, 100, 100)
+      doc.text(box.label, x + 2, y + 6)
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(textR, textG, textB)
+      doc.text(box.value, x + 2, y + 15)
+    })
     
     // Tabela de Lançamentos
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('Detalhamento dos Lançamentos', 14, 125)
+    doc.setTextColor(0, 0, 0)
+    doc.text('Detalhamento dos Lançamentos', 14, 132)
     
     const tableData = lancamentos.map((lanc) => [
       formatDateBR(lanc.data),
@@ -223,7 +223,7 @@ const Relatorios = () => {
     ])
     
     autoTable(doc, {
-      startY: 130,
+      startY: 137,
       head: [['Data', 'Carga', 'KM Total', 'Peso', 'Entregas', 'Valor']],
       body: tableData,
       theme: 'striped',
@@ -255,10 +255,18 @@ const Relatorios = () => {
     })
     
     // Footer com totais
-    const finalY = (doc as any).lastAutoTable.finalY + 10
+    const footerY = doc.internal.pageSize.getHeight() - 10
+    const totalsHeight = 32
+    const minGapBeforeFooter = 8
+    let finalY = (doc as any).lastAutoTable.finalY + 10
+
+    if (finalY + totalsHeight > footerY - minGapBeforeFooter) {
+      doc.addPage()
+      finalY = 20
+    }
     
     doc.setFillColor(240, 240, 240)
-    doc.rect(14, finalY, pageWidth - 28, 25, 'F')
+    doc.rect(14, finalY, pageWidth - 28, 32, 'F')
     
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
@@ -268,20 +276,20 @@ const Relatorios = () => {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text(`Viagens: ${stats.totalViagens}`, 18, finalY + 15)
-    doc.text(`KM: ${formatKm(stats.totalKm)}`, 60, finalY + 15)
-    doc.text(`Peso: ${formatPeso(stats.totalPeso)} kg`, 100, finalY + 15)
+    doc.text(`KM: ${formatKm(stats.totalKm)}`, 64, finalY + 15)
+    doc.text(`Peso: ${formatPeso(stats.totalPeso)} kg`, 118, finalY + 15)
+    doc.text(`Entregas: ${formatNumber(stats.totalEntregas)}`, 18, finalY + 23)
     
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(22, 163, 74)
-    doc.text(`Receita: ${formatCurrency(stats.totalReceita)}`, 150, finalY + 15)
+    doc.text(`Receita: ${formatCurrency(stats.totalReceita)}`, 118, finalY + 23)
     
     // Linha inferior
     doc.setDrawColor(14, 165, 233)
     doc.setLineWidth(0.5)
-    doc.line(14, finalY + 22, pageWidth - 14, finalY + 22)
+    doc.line(14, finalY + 29, pageWidth - 14, finalY + 29)
     
     // Rodapé
-    const footerY = doc.internal.pageSize.getHeight() - 10
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
@@ -342,7 +350,7 @@ const Relatorios = () => {
             </h2>
 
             {/* Resumo do Mês */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Total de Viagens</p>
                 <p className="text-2xl font-bold text-blue-700">{stats.totalViagens}</p>
@@ -354,6 +362,10 @@ const Relatorios = () => {
               <div className="bg-orange-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Total Peso</p>
                 <p className="text-2xl font-bold text-orange-700">{formatPeso(stats.totalPeso)} kg</p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">Total Entregas</p>
+                <p className="text-2xl font-bold text-purple-700">{formatNumber(stats.totalEntregas)}</p>
               </div>
               <div className="bg-primary-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Receita Total</p>
