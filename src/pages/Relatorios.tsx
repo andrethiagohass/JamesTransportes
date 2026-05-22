@@ -418,13 +418,13 @@ const Relatorios = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
-                        <span className="hidden sm:inline">Data</span>
-                        <span className="sm:hidden">Data / Carga</span>
+                        <span className="hidden lg:inline">Data</span>
+                        <span className="lg:hidden">Data / Carga</span>
                       </th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Carga</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
-                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">Peso</th>
-                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Entregas</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Entregas</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Peso</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Valor</th>
                     </tr>
                   </thead>
@@ -432,8 +432,8 @@ const Relatorios = () => {
                     {lancamentos.map((lanc) => (
                       <tr key={lanc.id} className="hover:bg-gray-50">
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                          <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
-                          <div className="sm:hidden">
+                          <span className="hidden lg:inline">{formatDateBR(lanc.data)}</span>
+                          <div className="lg:hidden min-w-[88px]">
                             <div>{formatDateShortBR(lanc.data)}</div>
                             <div className="mt-1 text-[11px] text-gray-500">
                               Carga:{' '}
@@ -455,12 +455,12 @@ const Relatorios = () => {
                           )}
                         </td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">{formatKm(lanc.km_total)} km</td>
-                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden sm:table-cell">{formatPeso(lanc.peso)} kg</td>
-                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
+                        <td className="px-2 sm:px-3 py-3 text-xs sm:text-sm">
                           <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
                             {lanc.qtd_entregas || 0}
                           </span>
                         </td>
+                        <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">{formatPeso(lanc.peso)} kg</td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium text-green-600">
                           <span className="hidden sm:inline">{formatCurrency(lanc.preco_total)}</span>
                           <span className="sm:hidden">R$ {formatKm(lanc.preco_total)}</span>
