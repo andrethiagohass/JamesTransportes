@@ -417,7 +417,10 @@ const Relatorios = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">Data</th>
+                      <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
+                        <span className="hidden sm:inline">Data</span>
+                        <span className="sm:hidden">Data / Carga</span>
+                      </th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Carga</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">KM</th>
                       <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">Peso</th>
@@ -430,7 +433,17 @@ const Relatorios = () => {
                       <tr key={lanc.id} className="hover:bg-gray-50">
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                           <span className="hidden sm:inline">{formatDateBR(lanc.data)}</span>
-                          <span className="sm:hidden">{formatDateShortBR(lanc.data)}</span>
+                          <div className="sm:hidden">
+                            <div>{formatDateShortBR(lanc.data)}</div>
+                            <div className="mt-1 text-[11px] text-gray-500">
+                              Carga:{' '}
+                              {lanc.carga ? (
+                                <span className="font-medium text-blue-700">{lanc.carga}</span>
+                              ) : (
+                                <span>-</span>
+                              )}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell">
                           {lanc.carga ? (
