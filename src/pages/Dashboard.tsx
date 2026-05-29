@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { BarChart3, TrendingUp, DollarSign, Package, Calendar } from 'lucide-react'
+import { BarChart3, TrendingUp, DollarSign, Package, Calendar, Truck } from 'lucide-react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
@@ -10,6 +10,7 @@ import EmptyState from '../components/EmptyState'
 
 interface Stats {
   totalLancamentos: number
+  totalEntregas: number
   totalKm: number
   totalPeso: number
   totalReceita: number
@@ -19,6 +20,7 @@ const Dashboard = () => {
   const { user } = useAuth()
   const [stats, setStats] = useState<Stats>({
     totalLancamentos: 0,
+    totalEntregas: 0,
     totalKm: 0,
     totalPeso: 0,
     totalReceita: 0,
@@ -49,12 +51,14 @@ const Dashboard = () => {
       if (error) throw error
 
       if (data) {
+        const totalEntregas = data.reduce((sum, item) => sum + (item.qtd_entregas || 0), 0)
         const totalKm = data.reduce((sum, item) => sum + item.km_total, 0)
         const totalPeso = data.reduce((sum, item) => sum + item.peso, 0)
         const totalReceita = data.reduce((sum, item) => sum + item.preco_total, 0)
 
         setStats({
           totalLancamentos: data.length,
+          totalEntregas,
           totalKm,
           totalPeso,
           totalReceita,
@@ -88,6 +92,13 @@ const Dashboard = () => {
       icon: Package,
       color: 'bg-orange-500',
       format: (val: number) => `${formatPeso(val)} kg`,
+    },
+    {
+      title: 'Total Entregas',
+      value: stats.totalEntregas,
+      icon: Truck,
+      color: 'bg-indigo-500',
+      format: (val: number) => val.toString(),
     },
     {
       title: 'Receita Total',
@@ -128,7 +139,7 @@ const Dashboard = () => {
       </div>
 
       {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {cards.map((card) => {
           const Icon = card.icon
           return (
