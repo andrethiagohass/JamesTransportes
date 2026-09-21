@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Filter, X, Wallet } from 'lucide-react'
+import { Save, Edit2, Trash2, X, Wallet } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatCurrency, formatCurrencyValue, parseCurrencyInputToCents } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import LoadingSkeleton from '../components/LoadingSkeleton'
 import EmptyState from '../components/EmptyState'
-import { subMonths, subYears, isAfter, parseISO, format } from 'date-fns'
+import PeriodFilterDropdown from '../components/PeriodFilterDropdown'
+import { format } from 'date-fns'
+import { DEFAULT_PERIOD_FILTER, PeriodFilterValue, matchesPeriodFilter } from '../utils/periodFilter'
 
 interface Despesa {
   id: string
@@ -18,8 +20,6 @@ interface Despesa {
   tenant_id: string
   created_at: string
 }
-
-type PeriodFilter = '1month' | '3months' | '6months' | '1year' | 'all'
 
 const CATEGORIAS = [
   { value: 'combustivel', label: 'Combustível' },
@@ -35,7 +35,7 @@ const Despesas = () => {
   const { user } = useAuth()
   const toast = useToast()
   const [despesas, setDespesas] = useState<Despesa[]>([])
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('1month')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>(DEFAULT_PERIOD_FILTER)
   const [data, setData] = useState(() => format(new Date(), 'yyyy-MM-dd'))
   const [categoria, setCategoria] = useState<string>('combustivel')
   const [descricao, setDescricao] = useState('')
@@ -60,32 +60,7 @@ const Despesas = () => {
 
   // Filtrar despesas por período
   const filteredDespesas = useMemo(() => {
-    if (periodFilter === 'all') return despesas
-
-    const now = new Date()
-    let cutoffDate: Date
-
-    switch (periodFilter) {
-      case '1month':
-        cutoffDate = subMonths(now, 1)
-        break
-      case '3months':
-        cutoffDate = subMonths(now, 3)
-        break
-      case '6months':
-        cutoffDate = subMonths(now, 6)
-        break
-      case '1year':
-        cutoffDate = subYears(now, 1)
-        break
-      default:
-        return despesas
-    }
-
-    return despesas.filter(desp => {
-      const despDate = parseISO(desp.data)
-      return isAfter(despDate, cutoffDate)
-    })
+    return despesas.filter(desp => matchesPeriodFilter(desp.data, periodFilter))
   }, [despesas, periodFilter])
 
   const totalPeriodo = useMemo(
@@ -290,20 +265,7 @@ const Despesas = () => {
           <h2 className="text-xl font-semibold">Despesas Registradas</h2>
 
           {/* Filtro de Período */}
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-gray-600" />
-            <select
-              value={periodFilter}
-              onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
-              className="input-field w-auto min-w-[180px]"
-            >
-              <option value="1month">Último mês</option>
-              <option value="3months">Últimos 3 meses</option>
-              <option value="6months">Últimos 6 meses</option>
-              <option value="1year">Último ano</option>
-              <option value="all">Todos os períodos</option>
-            </select>
-          </div>
+          <PeriodFilterDropdown value={periodFilter} onChange={setPeriodFilter} total={formatCurrency(totalPeriodo)} />
         </div>
 
         {!fetching && filteredDespesas.length > 0 && (

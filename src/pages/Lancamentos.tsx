@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, Edit2, Trash2, Calculator, TruckIcon, Filter, X, Plus, Minus } from 'lucide-react'
+import { Save, Edit2, Trash2, Calculator, TruckIcon, X, Plus, Minus } from 'lucide-react'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import LoadingSkeleton from '../components/LoadingSkeleton'
 import EmptyState from '../components/EmptyState'
-import { subMonths, subYears, isAfter, parseISO } from 'date-fns'
+import PeriodFilterDropdown from '../components/PeriodFilterDropdown'
+import { DEFAULT_PERIOD_FILTER, PeriodFilterValue, matchesPeriodFilter } from '../utils/periodFilter'
 
 interface Lancamento {
   id: string
@@ -27,13 +28,11 @@ interface Lancamento {
   created_at: string
 }
 
-type PeriodFilter = '1month' | '3months' | '6months' | '1year' | 'all'
-
 const Lancamentos = () => {
   const { user } = useAuth()
   const toast = useToast()
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('1month')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>(DEFAULT_PERIOD_FILTER)
   const [data, setData] = useState('')
   const [carga, setCarga] = useState('')
   const [kmInicial, setKmInicial] = useState('')
@@ -114,33 +113,13 @@ const Lancamentos = () => {
 
   // Filtrar lançamentos por período
   const filteredLancamentos = useMemo(() => {
-    if (periodFilter === 'all') return lancamentos
-
-    const now = new Date()
-    let cutoffDate: Date
-
-    switch (periodFilter) {
-      case '1month':
-        cutoffDate = subMonths(now, 1)
-        break
-      case '3months':
-        cutoffDate = subMonths(now, 3)
-        break
-      case '6months':
-        cutoffDate = subMonths(now, 6)
-        break
-      case '1year':
-        cutoffDate = subYears(now, 1)
-        break
-      default:
-        return lancamentos
-    }
-
-    return lancamentos.filter(lanc => {
-      const lancDate = parseISO(lanc.data)
-      return isAfter(lancDate, cutoffDate)
-    })
+    return lancamentos.filter(lanc => matchesPeriodFilter(lanc.data, periodFilter))
   }, [lancamentos, periodFilter])
+
+  const totalPeriodo = useMemo(
+    () => filteredLancamentos.reduce((sum, l) => sum + l.preco_total, 0),
+    [filteredLancamentos]
+  )
 
   const fetchLancamentos = async () => {
     if (!user) return
@@ -569,21 +548,18 @@ const Lancamentos = () => {
           <h2 className="text-xl font-semibold">Lançamentos Registrados</h2>
           
           {/* Filtro de Período */}
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-gray-600" />
-            <select
-              value={periodFilter}
-              onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
-              className="input-field w-auto min-w-[180px]"
-            >
-              <option value="1month">Último mês</option>
-              <option value="3months">Últimos 3 meses</option>
-              <option value="6months">Últimos 6 meses</option>
-              <option value="1year">Último ano</option>
-              <option value="all">Todos os períodos</option>
-            </select>
-          </div>
+          <PeriodFilterDropdown value={periodFilter} onChange={setPeriodFilter} total={formatCurrency(totalPeriodo)} />
         </div>
+
+        {!fetching && filteredLancamentos.length > 0 && (
+          <div className="bg-primary-50 p-4 rounded-lg mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm">Total no período</p>
+              <p className="font-bold text-2xl text-primary-700">{formatCurrency(totalPeriodo)}</p>
+            </div>
+            <p className="text-gray-600 text-sm">{filteredLancamentos.length} lançamento(s)</p>
+          </div>
+        )}
 
         {fetching ? (
           <LoadingSkeleton type="table" rows={5} />
