@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatDateBR, formatDateShortBR } from '../utils/dateUtils'
-import { formatKm, formatPeso, formatCurrency, formatNumber } from '../utils/formatUtils'
+import { formatKm, formatPeso, formatCurrency, formatCurrencyCompact, formatNumber } from '../utils/formatUtils'
 import { useAuth } from '../contexts/AuthContext'
 
 interface Lancamento {
@@ -91,12 +91,17 @@ const Relatorios = () => {
           totalReceita,
         })
 
-        // Preparar dados para o gráfico
-        const graficoData = data.map((item: any) => ({
-          data: format(parseISO(item.data), 'dd/MM'),
-          'Valor Total': item.preco_total,
-          'KM Total': item.km_total,
-        }))
+        // Preparar dados para o gráfico (com receita acumulada no período)
+        let acumulado = 0
+        const graficoData = data.map((item: any) => {
+          acumulado += item.preco_total
+          return {
+            data: format(parseISO(item.data), 'dd/MM'),
+            'Valor Total': item.preco_total,
+            'KM Total': item.km_total,
+            'Receita Acumulada': acumulado,
+          }
+        })
         setDadosGrafico(graficoData)
       } else {
         setStats(null)
@@ -395,17 +400,18 @@ const Relatorios = () => {
             {/* Gráfico */}
             {dadosGrafico.length > 0 && (
               <div className="mb-8">
-                <h3 className="font-semibold mb-4">Evolução no Mês</h3>
+                <h3 className="font-semibold mb-4">Receita Diária x Acumulada no Período</h3>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dadosGrafico}>
+                  <ComposedChart data={dadosGrafico} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="data" />
-                    <YAxis />
-                    <Tooltip />
+                    <YAxis yAxisId="left" tickFormatter={(v) => formatCurrencyCompact(v)} width={70} />
+                    <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => formatCurrencyCompact(v)} width={70} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
                     <Legend />
-                    <Bar dataKey="Valor Total" fill="#0ea5e9" />
-                    <Bar dataKey="KM Total" fill="#10b981" />
-                  </BarChart>
+                    <Bar yAxisId="left" dataKey="Valor Total" fill="#0ea5e9" barSize={24} />
+                    <Line yAxisId="right" type="monotone" dataKey="Receita Acumulada" stroke="#f97316" strokeWidth={2} dot={false} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             )}

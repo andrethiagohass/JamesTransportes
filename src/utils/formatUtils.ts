@@ -39,6 +39,21 @@ export const formatCurrency = (value: number): string => {
 }
 
 /**
+ * Formata valores monetários de forma compacta (para eixos de gráfico)
+ * Exemplo: 20000 -> "R$ 20k", 1500000 -> "R$ 1,5M"
+ */
+export const formatCurrencyCompact = (value: number): string => {
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000) {
+    return `R$ ${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`
+  }
+  if (abs >= 1_000) {
+    return `R$ ${(value / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`
+  }
+  return `R$ ${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+}
+
+/**
  * Formata valores monetários sem o símbolo R$
  * Exemplo: 1000.10 -> "1.000,10"
  */
