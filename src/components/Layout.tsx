@@ -15,7 +15,8 @@ import {
   Users,
   ChevronDown,
   ChevronRight,
-  Tag
+  Tag,
+  Wallet
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
@@ -177,6 +178,19 @@ const Layout = ({ children }: LayoutProps) => {
               <span>Lançamentos</span>
             </Link>
 
+            {/* Despesas */}
+            <Link
+              to="/despesas"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/despesas')
+                  ? 'bg-primary-100 text-primary-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Wallet size={20} />
+              <span>Despesas</span>
+            </Link>
+
             {/* Relatórios */}
             <Link
               to="/relatorios"
@@ -301,6 +315,20 @@ const Layout = ({ children }: LayoutProps) => {
                   >
                     <FileText size={20} />
                     <span>Lançamentos</span>
+                  </Link>
+
+                  {/* Despesas */}
+                  <Link
+                    to="/despesas"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive('/despesas')
+                        ? 'bg-primary-100 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Wallet size={20} />
+                    <span>Despesas</span>
                   </Link>
 
                   {/* Relatórios */}

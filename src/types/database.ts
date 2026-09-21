@@ -216,6 +216,38 @@ export interface Database {
           updated_at?: string
         }
       }
+      despesas: {
+        Row: {
+          id: string
+          tenant_id: string
+          data: string
+          categoria: string
+          descricao: string | null
+          valor: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          data: string
+          categoria: string
+          descricao?: string | null
+          valor: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          data?: string
+          categoria?: string
+          descricao?: string | null
+          valor?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

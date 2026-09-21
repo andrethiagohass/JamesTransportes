@@ -45,3 +45,13 @@ export const formatCurrency = (value: number): string => {
 export const formatCurrencyValue = (value: number): string => {
   return formatNumber(value, 2)
 }
+
+/**
+ * Extrai o valor em centavos a partir de uma string digitada livremente
+ * Usado para mascarar inputs de valor monetário enquanto o usuário digita
+ * Exemplo: "1050" -> 1050 (ou seja, R$ 10,50)
+ */
+export const parseCurrencyInputToCents = (raw: string): number => {
+  const digits = raw.replace(/\D/g, '')
+  return digits ? parseInt(digits, 10) : 0
+}

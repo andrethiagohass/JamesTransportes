@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { BarChart3, TrendingUp, DollarSign, Package, Calendar, Truck } from 'lucide-react'
+import { BarChart3, TrendingUp, DollarSign, Package, Calendar, Truck, Wallet } from 'lucide-react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatKm, formatPeso, formatCurrency } from '../utils/formatUtils'
@@ -14,6 +14,7 @@ interface Stats {
   totalKm: number
   totalPeso: number
   totalReceita: number
+  totalDespesas: number
 }
 
 const Dashboard = () => {
@@ -24,6 +25,7 @@ const Dashboard = () => {
     totalKm: 0,
     totalPeso: 0,
     totalReceita: 0,
+    totalDespesas: 0,
   })
   const [loading, setLoading] = useState(true)
 
@@ -41,20 +43,30 @@ const Dashboard = () => {
       const start = startOfMonth(now)
       const end = endOfMonth(now)
 
-      const { data, error } = await supabase
-        .from('lancamentos')
-        .select('*')
-        .eq('tenant_id', user.tenant_id)
-        .gte('data', format(start, 'yyyy-MM-dd'))
-        .lte('data', format(end, 'yyyy-MM-dd'))
+      const [{ data, error }, { data: despesasData, error: despesasError }] = await Promise.all([
+        supabase
+          .from('lancamentos')
+          .select('*')
+          .eq('tenant_id', user.tenant_id)
+          .gte('data', format(start, 'yyyy-MM-dd'))
+          .lte('data', format(end, 'yyyy-MM-dd')),
+        supabase
+          .from('despesas')
+          .select('valor')
+          .eq('tenant_id', user.tenant_id)
+          .gte('data', format(start, 'yyyy-MM-dd'))
+          .lte('data', format(end, 'yyyy-MM-dd'))
+      ])
 
       if (error) throw error
+      if (despesasError) throw despesasError
 
       if (data) {
         const totalEntregas = data.reduce((sum, item) => sum + (item.qtd_entregas || 0), 0)
         const totalKm = data.reduce((sum, item) => sum + item.km_total, 0)
         const totalPeso = data.reduce((sum, item) => sum + item.peso, 0)
         const totalReceita = data.reduce((sum, item) => sum + item.preco_total, 0)
+        const totalDespesas = (despesasData || []).reduce((sum, item) => sum + item.valor, 0)
 
         setStats({
           totalLancamentos: data.length,
@@ -62,6 +74,7 @@ const Dashboard = () => {
           totalKm,
           totalPeso,
           totalReceita,
+          totalDespesas,
         })
       }
     } catch (error) {
@@ -107,6 +120,13 @@ const Dashboard = () => {
       color: 'bg-primary-500',
       format: (val: number) => formatCurrency(val),
     },
+    {
+      title: 'Despesas do Mês',
+      value: stats.totalDespesas,
+      icon: Wallet,
+      color: 'bg-red-500',
+      format: (val: number) => formatCurrency(val),
+    },
   ]
 
   if (loading) {
@@ -139,7 +159,7 @@ const Dashboard = () => {
       </div>
 
       {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {cards.map((card) => {
           const Icon = card.icon
           return (
