@@ -26,6 +26,9 @@ const CATEGORIAS = [
   { value: 'pedagio', label: 'Pedágio' },
   { value: 'alimentacao', label: 'Alimentação' },
   { value: 'manutencao', label: 'Manutenção' },
+  { value: 'lavacao', label: 'Lavação' },
+  { value: 'honorarios', label: 'Honorários' },
+  { value: 'impostos', label: 'Impostos' },
   { value: 'outros', label: 'Outros' },
 ] as const
 
