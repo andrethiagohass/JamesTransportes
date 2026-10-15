@@ -7,5 +7,5 @@ ALTER TABLE public.despesas
   ADD CONSTRAINT despesas_categoria_check
   CHECK (categoria IN (
     'combustivel', 'pedagio', 'alimentacao', 'manutencao',
-    'lavacao', 'honorarios', 'impostos', 'outros'
+    'lavacao', 'honorarios', 'impostos', 'telefonia', 'outros'
   ));
