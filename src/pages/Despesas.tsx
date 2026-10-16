@@ -30,6 +30,8 @@ const CATEGORIAS = [
   { value: 'honorarios', label: 'Honorários' },
   { value: 'impostos', label: 'Impostos' },
   { value: 'telefonia', label: 'Telefonia' },
+  { value: 'parcela_caminhao', label: 'Parcela Caminhão' },
+  { value: 'seguro', label: 'Seguro' },
   { value: 'outros', label: 'Outros' },
 ] as const
 
