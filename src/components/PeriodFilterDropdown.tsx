@@ -6,6 +6,7 @@ import {
   QuickPeriod,
   getPeriodFilterLabel,
 } from '../utils/periodFilter'
+import TotalBadge from './TotalBadge'
 
 const QUICK_FILTERS: QuickPeriod[] = [
   'currentYear',
@@ -22,9 +23,16 @@ interface PeriodFilterDropdownProps {
   onChange: (value: PeriodFilterValue) => void
   total: string
   totalLabel?: string
+  showTotal?: boolean
 }
 
-const PeriodFilterDropdown = ({ value, onChange, total, totalLabel = 'Total' }: PeriodFilterDropdownProps) => {
+const PeriodFilterDropdown = ({
+  value,
+  onChange,
+  total,
+  totalLabel = 'Total',
+  showTotal = true,
+}: PeriodFilterDropdownProps) => {
   const [open, setOpen] = useState(false)
   const [calendarYear, setCalendarYear] = useState(() =>
     value.type === 'month' ? value.year : new Date().getFullYear()
@@ -61,10 +69,7 @@ const PeriodFilterDropdown = ({ value, onChange, total, totalLabel = 'Total' }: 
   return (
     <div ref={containerRef} className="relative inline-block">
       <div className="flex items-center gap-2">
-        <div className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm">
-          <span className="text-gray-500">{totalLabel}: </span>
-          <span className="font-semibold text-gray-900">{total}</span>
-        </div>
+        {showTotal && <TotalBadge label={totalLabel} value={total} />}
         <button
           type="button"
           onClick={toggleOpen}

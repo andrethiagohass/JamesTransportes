@@ -9,6 +9,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton'
 import EmptyState from '../components/EmptyState'
 import PeriodFilterDropdown from '../components/PeriodFilterDropdown'
 import CategoriaFilterDropdown from '../components/CategoriaFilterDropdown'
+import TotalBadge from '../components/TotalBadge'
 import { format } from 'date-fns'
 import { DEFAULT_PERIOD_FILTER, PeriodFilterValue, matchesPeriodFilter } from '../utils/periodFilter'
 import { ALL_CATEGORIAS, CATEGORIAS, categoriaLabel } from '../utils/categorias'
@@ -264,6 +265,9 @@ const Despesas = () => {
           <h2 className="text-xl font-semibold">Despesas Registradas</h2>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Total das despesas filtradas */}
+            <TotalBadge value={formatCurrency(totalPeriodo)} />
+
             {/* Filtro de Categoria */}
             <CategoriaFilterDropdown
               selected={categoriasSelecionadas}
@@ -271,7 +275,12 @@ const Despesas = () => {
             />
 
             {/* Filtro de Período */}
-            <PeriodFilterDropdown value={periodFilter} onChange={setPeriodFilter} total={formatCurrency(totalPeriodo)} />
+            <PeriodFilterDropdown
+              value={periodFilter}
+              onChange={setPeriodFilter}
+              total={formatCurrency(totalPeriodo)}
+              showTotal={false}
+            />
           </div>
         </div>
 
