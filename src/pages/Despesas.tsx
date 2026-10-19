@@ -8,8 +8,10 @@ import { useToast } from '../contexts/ToastContext'
 import LoadingSkeleton from '../components/LoadingSkeleton'
 import EmptyState from '../components/EmptyState'
 import PeriodFilterDropdown from '../components/PeriodFilterDropdown'
+import CategoriaFilterDropdown from '../components/CategoriaFilterDropdown'
 import { format } from 'date-fns'
 import { DEFAULT_PERIOD_FILTER, PeriodFilterValue, matchesPeriodFilter } from '../utils/periodFilter'
+import { ALL_CATEGORIAS, CATEGORIAS, categoriaLabel } from '../utils/categorias'
 
 interface Despesa {
   id: string
@@ -21,27 +23,12 @@ interface Despesa {
   created_at: string
 }
 
-const CATEGORIAS = [
-  { value: 'combustivel', label: 'Combustível' },
-  { value: 'pedagio', label: 'Pedágio' },
-  { value: 'alimentacao', label: 'Alimentação' },
-  { value: 'manutencao', label: 'Manutenção' },
-  { value: 'lavacao', label: 'Lavação' },
-  { value: 'honorarios', label: 'Honorários' },
-  { value: 'impostos', label: 'Impostos' },
-  { value: 'telefonia', label: 'Telefonia' },
-  { value: 'parcela_caminhao', label: 'Parcela Caminhão' },
-  { value: 'seguro', label: 'Seguro' },
-  { value: 'outros', label: 'Outros' },
-] as const
-
-const categoriaLabel = (value: string) => CATEGORIAS.find(c => c.value === value)?.label || value
-
 const Despesas = () => {
   const { user } = useAuth()
   const toast = useToast()
   const [despesas, setDespesas] = useState<Despesa[]>([])
   const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>(DEFAULT_PERIOD_FILTER)
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>([...ALL_CATEGORIAS])
   const [data, setData] = useState(() => format(new Date(), 'yyyy-MM-dd'))
   const [categoria, setCategoria] = useState<string>('combustivel')
   const [descricao, setDescricao] = useState('')
@@ -64,10 +51,16 @@ const Despesas = () => {
     }
   }, [user])
 
-  // Filtrar despesas por período
+  // Filtrar despesas por período e por categoria
   const filteredDespesas = useMemo(() => {
-    return despesas.filter(desp => matchesPeriodFilter(desp.data, periodFilter))
-  }, [despesas, periodFilter])
+    return despesas.filter(
+      (desp) =>
+        matchesPeriodFilter(desp.data, periodFilter) &&
+        categoriasSelecionadas.includes(desp.categoria)
+    )
+  }, [despesas, periodFilter, categoriasSelecionadas])
+
+  const todasCategoriasSelecionadas = categoriasSelecionadas.length === CATEGORIAS.length
 
   const totalPeriodo = useMemo(
     () => filteredDespesas.reduce((sum, d) => sum + d.valor, 0),
@@ -270,14 +263,24 @@ const Despesas = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <h2 className="text-xl font-semibold">Despesas Registradas</h2>
 
-          {/* Filtro de Período */}
-          <PeriodFilterDropdown value={periodFilter} onChange={setPeriodFilter} total={formatCurrency(totalPeriodo)} />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Filtro de Categoria */}
+            <CategoriaFilterDropdown
+              selected={categoriasSelecionadas}
+              onChange={setCategoriasSelecionadas}
+            />
+
+            {/* Filtro de Período */}
+            <PeriodFilterDropdown value={periodFilter} onChange={setPeriodFilter} total={formatCurrency(totalPeriodo)} />
+          </div>
         </div>
 
         {!fetching && filteredDespesas.length > 0 && (
           <div className="bg-red-50 p-4 rounded-lg mb-4 flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Total no período</p>
+              <p className="text-gray-600 text-sm">
+                {todasCategoriasSelecionadas ? 'Total no período' : 'Total filtrado'}
+              </p>
               <p className="font-bold text-2xl text-red-700">{formatCurrency(totalPeriodo)}</p>
             </div>
             <p className="text-gray-600 text-sm">{filteredDespesas.length} despesa(s)</p>
@@ -289,10 +292,20 @@ const Despesas = () => {
         ) : filteredDespesas.length === 0 ? (
           <EmptyState
             icon={Wallet}
-            title={despesas.length === 0 ? "Nenhuma despesa cadastrada" : "Nenhuma despesa neste período"}
-            description={despesas.length === 0
-              ? "Registre seus gastos do dia a dia na estrada, como combustível, pedágio e alimentação."
-              : "Não há despesas para o período selecionado. Tente selecionar um período maior."}
+            title={
+              despesas.length === 0
+                ? "Nenhuma despesa cadastrada"
+                : categoriasSelecionadas.length === 0
+                  ? "Nenhuma categoria selecionada"
+                  : "Nenhuma despesa neste período"
+            }
+            description={
+              despesas.length === 0
+                ? "Registre seus gastos do dia a dia na estrada, como combustível, pedágio e alimentação."
+                : categoriasSelecionadas.length === 0
+                  ? "Selecione ao menos uma categoria no filtro para ver as despesas."
+                  : "Não há despesas para o período selecionado. Tente selecionar um período maior."
+            }
           />
         ) : (
           <div className="table-container">
