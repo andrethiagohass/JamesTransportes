@@ -8,5 +8,5 @@ ALTER TABLE public.despesas
   CHECK (categoria IN (
     'combustivel', 'pedagio', 'alimentacao', 'manutencao',
     'lavacao', 'honorarios', 'impostos', 'telefonia',
-    'parcela_caminhao', 'seguro', 'outros'
+    'parcela_caminhao', 'seguro', 'arla', 'outros'
   ));

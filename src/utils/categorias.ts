@@ -9,6 +9,7 @@ export const CATEGORIAS = [
   { value: 'telefonia', label: 'Telefonia' },
   { value: 'parcela_caminhao', label: 'Parcela Caminhão' },
   { value: 'seguro', label: 'Seguro' },
+  { value: 'arla', label: 'ARLA' },
   { value: 'outros', label: 'Outros' },
 ] as const
 
